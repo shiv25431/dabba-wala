@@ -9,6 +9,7 @@ function AdminPanel() {
   const today = new Date().toISOString().slice(0, 10);
   const [loggedIn, setLoggedIn] = useState(() => localStorage.getItem("dw_admin_auth") === "1");
   const [password, setPassword] = useState("");
+  const [whatsappEnabled, setWhatsappEnabled] = useState(() => localStorage.getItem("dw_whatsapp_enabled") === "1");
   const [customers, setCustomers] = useState(() => {
     try { return JSON.parse(localStorage.getItem("dw_customers") || "[]"); } catch { return []; }
   });
@@ -89,7 +90,9 @@ function AdminPanel() {
       "*Schedule:* Monday to Saturday – 2 Meals, Sunday – 1 Meal","",
       "Thank you for choosing *Dabba Wala* ❤️"
     ].filter(Boolean).join("\n");
-    window.open(`https://wa.me/91${mobile}?text=${encodeURIComponent(message)}`, "_blank");
+    if (whatsappEnabled) {
+      window.open(`https://wa.me/91${mobile}?text=${encodeURIComponent(message)}`, "_blank");
+    }
 
     setForm({name:"",mobile:"",address:"",area:"",plan:"Monthly Subscription",ratePerTiffin:"50",
       totalTiffins:"56",totalAmount:"2800",paidAmount:"0",startDate:today,notes:""});
@@ -156,7 +159,16 @@ function AdminPanel() {
 
   return <div className="dw-admin-page">
     <header className="dw-admin-top"><div><div className="dw-admin-brand"><img src={logo} alt="Dabba Wala Logo"/><div><strong>Dabba Wala</strong><span>OWNER ADMIN</span></div></div><small>Customer, Tiffin & Payment Management</small></div>
-      <button onClick={()=>{localStorage.removeItem("dw_admin_auth");setLoggedIn(false)}}>Logout</button>
+      <div className="dw-admin-actions">
+        <button className={`dw-wa-toggle ${whatsappEnabled ? "on" : "off"}`} onClick={()=>{
+          const next = !whatsappEnabled;
+          setWhatsappEnabled(next);
+          localStorage.setItem("dw_whatsapp_enabled", next ? "1" : "0");
+        }}>
+          {whatsappEnabled ? "🟢 WhatsApp ON" : "⚪ WhatsApp OFF"}
+        </button>
+        <button onClick={()=>{localStorage.removeItem("dw_admin_auth");setLoggedIn(false)}}>Logout</button>
+      </div>
     </header>
 
     <main className="dw-admin-wrap">
@@ -190,7 +202,7 @@ function AdminPanel() {
             <label>Start Date<input type="date" value={form.startDate} onChange={e=>setForm({...form,startDate:e.target.value})}/></label>
             <label>Notes<textarea rows="2" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="Meal timing, instructions, etc."/></label>
             <div className="dw-live-summary"><b>Subscription Summary</b><span>{form.totalTiffins} tiffins × ₹{form.ratePerTiffin} = ₹{form.totalAmount}</span><span>Paid ₹{form.paidAmount} • Pending ₹{Math.max(0,Number(form.totalAmount||0)-Number(form.paidAmount||0))}</span></div>
-            <button className="dw-primary">Save Customer + Open WhatsApp →</button>
+            <button className="dw-primary">Save Customer {whatsappEnabled ? "+ Open WhatsApp →" : ""}</button>
           </form>
         </div>
 
@@ -236,7 +248,7 @@ function AdminPanel() {
     <style>{`
       .dw-admin-page{min-height:100vh;background:#f7f3ef;color:#292524;font-family:inherit}
       .dw-admin-top{background:#fff;border-bottom:1px solid #eadfd7;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;gap:20px}
-      .dw-admin-top>button,.dw-daily-head>button{border:1px solid #ddd3cc;background:#fff;border-radius:10px;padding:10px 16px;cursor:pointer}
+      .dw-admin-actions{display:flex;align-items:center;gap:8px}.dw-admin-top>button,.dw-admin-actions>button,.dw-daily-head>button{border:1px solid #ddd3cc;background:#fff;border-radius:10px;padding:10px 16px;cursor:pointer}.dw-wa-toggle.on{border-color:#b9e8c7;background:#effcf3;color:#087a2f;font-weight:800}.dw-wa-toggle.off{border-color:#e3ddd7;background:#faf8f6;color:#777}
       .dw-admin-brand{display:flex;align-items:center;gap:10px}.dw-admin-brand img{width:130px;height:52px;object-fit:contain;display:block}
       .dw-admin-brand div{display:flex;flex-direction:column;gap:2px}.dw-admin-brand strong{font-size:19px}.dw-admin-brand span{font-size:10px;font-weight:800;color:#f06b2d;letter-spacing:.7px}
       .dw-admin-top small{color:#777;display:block;margin-top:2px}.dw-admin-wrap{max-width:1400px;margin:auto;padding:24px}
@@ -262,7 +274,7 @@ function AdminPanel() {
       .dw-payment-modal h2{margin:0 0 4px}.dw-payment-modal>p{margin:0 0 18px}.dw-payment-modal label{margin-bottom:12px}.dw-modal-close{position:absolute;right:12px;top:12px;border:1px solid #ddd3cc;background:#fff;border-radius:50%;width:32px;height:32px;font-size:20px;cursor:pointer}
       .dw-payment-preview{background:#fff8ef;border-radius:10px;padding:11px;margin-bottom:12px;font-weight:700}.dw-note{margin-top:18px;padding:13px 15px;background:#fff7df;border:1px solid #f0d890;border-radius:12px;color:#725b16;font-size:12px}
       @media(max-width:1050px){.dw-stats{grid-template-columns:repeat(3,1fr)}.dw-admin-grid{grid-template-columns:1fr}}
-      @media(max-width:650px){.dw-admin-wrap{padding:12px}.dw-admin-top{padding:10px 12px}.dw-admin-brand img{width:105px;height:44px}.dw-admin-brand strong{font-size:16px}.dw-stats{grid-template-columns:repeat(2,1fr)}.dw-two,.dw-meal-grid{grid-template-columns:1fr}.dw-list-head{flex-direction:column}.dw-list-head input{max-width:none}.dw-balance-grid{grid-template-columns:repeat(2,1fr)}.dw-date-control{flex-direction:column;align-items:stretch}.dw-date-control label{width:auto}}
+      @media(max-width:650px){.dw-admin-wrap{padding:12px}.dw-admin-top{padding:10px 12px}.dw-admin-actions{flex-wrap:wrap;justify-content:flex-end}.dw-admin-brand img{width:105px;height:44px}.dw-admin-brand strong{font-size:16px}.dw-stats{grid-template-columns:repeat(2,1fr)}.dw-two,.dw-meal-grid{grid-template-columns:1fr}.dw-list-head{flex-direction:column}.dw-list-head input{max-width:none}.dw-balance-grid{grid-template-columns:repeat(2,1fr)}.dw-date-control{flex-direction:column;align-items:stretch}.dw-date-control label{width:auto}}
     `}</style>
   </div>;
 }
