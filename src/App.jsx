@@ -6,99 +6,264 @@ import "./App.css";
 
 
 function AdminPanel() {
+  const today = new Date().toISOString().slice(0, 10);
   const [loggedIn, setLoggedIn] = useState(() => localStorage.getItem("dw_admin_auth") === "1");
   const [password, setPassword] = useState("");
   const [customers, setCustomers] = useState(() => {
     try { return JSON.parse(localStorage.getItem("dw_customers") || "[]"); } catch { return []; }
   });
-  const [form, setForm] = useState({ name:"", mobile:"", address:"", plan:"Monthly Subscription", amount:"2800", startDate:new Date().toISOString().slice(0,10), notes:"" });
+  const [form, setForm] = useState({
+    name:"", mobile:"", address:"", area:"", plan:"Monthly Subscription",
+    ratePerTiffin:"50", totalTiffins:"56", totalAmount:"2800", paidAmount:"0",
+    startDate:today, notes:""
+  });
   const [search, setSearch] = useState("");
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [editPayment, setEditPayment] = useState(null);
 
   const saveCustomers = (next) => {
     setCustomers(next);
     localStorage.setItem("dw_customers", JSON.stringify(next));
   };
 
+  const used = (c) => Object.values(c.dailyRecords || {}).reduce(
+    (n,d) => n + (d?.morning === "Delivered" ? 1 : 0) + (d?.evening === "Delivered" ? 1 : 0), 0
+  );
+  const remaining = (c) => Math.max(0, Number(c.totalTiffins || 0) - used(c));
+  const pending = (c) => Math.max(0, Number(c.totalAmount || 0) - Number(c.paidAmount || 0));
+  const paymentStatus = (c) => {
+    const total = Number(c.totalAmount || 0), paid = Number(c.paidAmount || 0);
+    if (paid >= total && total > 0) return "Paid";
+    if (paid > 0) return "Half Payment";
+    return "Pending";
+  };
+
   const login = (e) => {
     e.preventDefault();
-    // Change this PIN before sharing the admin URL.
     if (password === "7223") {
       localStorage.setItem("dw_admin_auth", "1");
-      setLoggedIn(true);
-      setPassword("");
+      setLoggedIn(true); setPassword("");
     } else alert("Wrong admin PIN");
+  };
+
+  const recalcAmount = (field, value) => {
+    const next = { ...form, [field]: value };
+    if (field === "ratePerTiffin" || field === "totalTiffins") {
+      const rate = Number(field === "ratePerTiffin" ? value : form.ratePerTiffin) || 0;
+      const qty = Number(field === "totalTiffins" ? value : form.totalTiffins) || 0;
+      next.totalAmount = String(rate * qty);
+    }
+    setForm(next);
   };
 
   const addCustomer = (e) => {
     e.preventDefault();
     const mobile = form.mobile.replace(/\D/g, "");
-    if (!form.name.trim() || mobile.length !== 10 || !form.address.trim() || !form.amount) {
-      alert("Name, 10-digit mobile, address and amount are required."); return;
+    const rate = Number(form.ratePerTiffin), qty = Number(form.totalTiffins);
+    const total = Number(form.totalAmount), paid = Math.min(Math.max(Number(form.paidAmount || 0),0), total);
+    if (!form.name.trim() || mobile.length !== 10 || !form.address.trim() || !rate || !qty || !total) {
+      alert("Name, 10-digit mobile, address, rate and total tiffins are required."); return;
     }
     const start = new Date(form.startDate + "T00:00:00");
     const end = new Date(start);
     if (form.plan === "Monthly Subscription") end.setDate(end.getDate() + 30);
+
     const customer = {
-      id: Date.now(), name: form.name.trim(), mobile, address: form.address.trim(),
-      plan: form.plan, amount: Number(form.amount), startDate: form.startDate,
-      endDate: end.toISOString().slice(0,10), notes: form.notes.trim(), status: "Active"
+      id: Date.now(), name:form.name.trim(), mobile, address:form.address.trim(), area:form.area.trim(),
+      plan:form.plan, ratePerTiffin:rate, totalTiffins:qty, totalAmount:total, paidAmount:paid,
+      paymentStatus:paymentStatus({totalAmount:total,paidAmount:paid}),
+      startDate:form.startDate, endDate:end.toISOString().slice(0,10),
+      notes:form.notes.trim(), status:"Active", dailyRecords:{}
     };
-    const next = [customer, ...customers];
-    saveCustomers(next);
+    saveCustomers([customer, ...customers]);
+
     const message = [
-      "🍱 *Dabba Wala – Subscription Started*", "", `Hello ${customer.name} 👋`,
-      "Your tiffin subscription has been successfully started.", "",
-      `*Plan:* ${customer.plan}`, `*Amount:* ₹${customer.amount}`,
-      `*Start Date:* ${customer.startDate}`, `*Valid Till:* ${customer.endDate}`,
-      `*Delivery Address:* ${customer.address}`,
+      "🍱 *Dabba Wala – Subscription Started*","",`Hello ${customer.name} 👋`,
+      `*Plan:* ${customer.plan}`,`*Rate:* ₹${rate} per tiffin`,`*Total Tiffins:* ${qty}`,
+      `*Total Amount:* ₹${total}`,`*Paid:* ₹${paid}`,`*Pending:* ₹${total-paid}`,
+      `*Payment Status:* ${paymentStatus(customer)}`,`*Start Date:* ${customer.startDate}`,
+      `*Valid Till:* ${customer.endDate}`,`*Delivery Address:* ${customer.address}`,
+      customer.area ? `*Area:* ${customer.area}` : "",
       "*Meal:* Dal, Chawal, 4 Roti, Sabji, Aachar / Papad / Salad",
-      "*Schedule:* Monday to Saturday + Sunday: 1 Time Meal Only", "",
+      "*Schedule:* Monday to Saturday – 2 Meals, Sunday – 1 Meal","",
       "Thank you for choosing *Dabba Wala* ❤️"
-    ].join("\n");
+    ].filter(Boolean).join("\n");
     window.open(`https://wa.me/91${mobile}?text=${encodeURIComponent(message)}`, "_blank");
-    setForm({ name:"", mobile:"", address:"", plan:"Monthly Subscription", amount:"2800", startDate:new Date().toISOString().slice(0,10), notes:"" });
+
+    setForm({name:"",mobile:"",address:"",area:"",plan:"Monthly Subscription",ratePerTiffin:"50",
+      totalTiffins:"56",totalAmount:"2800",paidAmount:"0",startDate:today,notes:""});
   };
 
-  const removeCustomer = (id) => saveCustomers(customers.filter(c => c.id !== id));
+  const removeCustomer = (id) => {
+    if (window.confirm("Delete this customer?")) {
+      saveCustomers(customers.filter(c => c.id !== id));
+      if (selectedCustomer?.id === id) setSelectedCustomer(null);
+    }
+  };
+
+  const updatePayment = (c, value) => {
+    const paidAmount = Math.min(Math.max(Number(value) || 0, 0), Number(c.totalAmount || 0));
+    const next = customers.map(x => x.id === c.id
+      ? {...x, paidAmount, paymentStatus:paymentStatus({...x,paidAmount})} : x);
+    saveCustomers(next);
+    setSelectedCustomer(next.find(x => x.id === c.id) || null);
+    setEditPayment(null);
+  };
+
+  const setMeal = (c, date, meal, status) => {
+    const day = c.dailyRecords?.[date] || {morning:"Not Updated",evening:"Not Updated"};
+    const next = customers.map(x => x.id === c.id ? {
+      ...x, dailyRecords:{...(x.dailyRecords||{}),[date]:{...day,[meal]:status}}
+    } : x);
+    saveCustomers(next);
+    setSelectedCustomer(next.find(x => x.id === c.id) || null);
+  };
+
+  const fullDayOff = (c,date) => {
+    const next = customers.map(x => x.id === c.id ? {
+      ...x,dailyRecords:{...(x.dailyRecords||{}),[date]:{morning:"OFF",evening:"OFF"}}
+    } : x);
+    saveCustomers(next);
+    setSelectedCustomer(next.find(x => x.id === c.id) || null);
+  };
+
   const sendMessage = (c) => {
-    const message = `🍱 *Dabba Wala – Subscription Update*\\n\\nHello ${c.name} 👋\\nYour ${c.plan} is active.\\nAmount: ₹${c.amount}\\nStart Date: ${c.startDate}\\nValid Till: ${c.endDate}\\n\\nThank you for choosing Dabba Wala ❤️`;
-    window.open(`https://wa.me/91${c.mobile}?text=${encodeURIComponent(message)}`, "_blank");
+    const day = c.dailyRecords?.[today] || {};
+    const message = [
+      "🍱 *Dabba Wala – Subscription Update*","",`Hello ${c.name} 👋`,
+      `*Total Tiffins:* ${c.totalTiffins}`,`*Used:* ${used(c)}`,`*Remaining:* ${remaining(c)}`,
+      `*Rate:* ₹${c.ratePerTiffin}/tiffin`,`*Total Amount:* ₹${c.totalAmount}`,
+      `*Paid:* ₹${c.paidAmount}`,`*Pending:* ₹${pending(c)}`,`*Payment Status:* ${paymentStatus(c)}`,
+      `*Today:* Morning – ${day.morning||"Not Updated"}, Evening – ${day.evening||"Not Updated"}`,
+      "","Thank you for choosing Dabba Wala ❤️"
+    ].join("\n");
+    window.open(`https://wa.me/91${c.mobile}?text=${encodeURIComponent(message)}`,"_blank");
   };
 
-  if (!loggedIn) return <div className="dw-admin-login"><div className="dw-admin-card"><img className="dw-logo-img" src={logo} alt="Dabba Wala Logo" /><h1>Dabba Wala</h1><p>Owner Admin Panel</p><form onSubmit={login}><input type="password" placeholder="Admin PIN" value={password} onChange={e=>setPassword(e.target.value)} autoFocus/><button>Login to Admin</button></form><small>Owner access only</small></div></div>;
-
-  const filtered = customers.filter(c => [c.name,c.mobile,c.plan,c.address].join(" ").toLowerCase().includes(search.toLowerCase()));
+  const filtered = customers.filter(c => [c.name,c.mobile,c.plan,c.address,c.area].join(" ").toLowerCase().includes(search.toLowerCase()));
   const active = customers.filter(c => c.status === "Active").length;
-  const revenue = customers.reduce((s,c)=>s+Number(c.amount||0),0);
+  const totalAmount = customers.reduce((s,c)=>s+Number(c.totalAmount||c.amount||0),0);
+  const totalPaid = customers.reduce((s,c)=>s+Number(c.paidAmount||0),0);
+  const totalPending = Math.max(0,totalAmount-totalPaid);
+  const totalRemaining = customers.reduce((s,c)=>s+remaining(c),0);
+
+  if (!loggedIn) return <div className="dw-admin-login"><div className="dw-admin-card">
+    <img className="dw-logo-img" src={logo} alt="Dabba Wala Logo"/><h1>Dabba Wala</h1><p>Owner Admin Panel</p>
+    <form onSubmit={login}><input type="password" placeholder="Admin PIN" value={password} onChange={e=>setPassword(e.target.value)} autoFocus/><button>Login to Admin</button></form>
+    <small>Owner access only</small>
+  </div></div>;
 
   return <div className="dw-admin-page">
-    <header className="dw-admin-top"><div><div className="dw-admin-brand"><img src={logo} alt="Dabba Wala Logo" /> Dabba Wala <span>OWNER ADMIN</span></div><small>Customer & Subscription Management</small></div><button onClick={()=>{localStorage.removeItem("dw_admin_auth");setLoggedIn(false)}}>Logout</button></header>
+    <header className="dw-admin-top"><div><div className="dw-admin-brand"><img src={logo} alt="Dabba Wala Logo"/><div><strong>Dabba Wala</strong><span>OWNER ADMIN</span></div></div><small>Customer, Tiffin & Payment Management</small></div>
+      <button onClick={()=>{localStorage.removeItem("dw_admin_auth");setLoggedIn(false)}}>Logout</button>
+    </header>
+
     <main className="dw-admin-wrap">
-      <div className="dw-stats"><div><b>{customers.length}</b><span>Total Customers</span></div><div><b>{active}</b><span>Active Subscriptions</span></div><div><b>₹{revenue.toLocaleString("en-IN")}</b><span>Total Recorded</span></div></div>
+      <div className="dw-stats">
+        <div><b>{customers.length}</b><span>Total Customers</span></div>
+        <div><b>{active}</b><span>Active Subscriptions</span></div>
+        <div><b>{totalRemaining}</b><span>Tiffins Remaining</span></div>
+        <div><b>₹{totalPaid.toLocaleString("en-IN")}</b><span>Total Paid</span></div>
+        <div><b>₹{totalPending.toLocaleString("en-IN")}</b><span>Total Pending</span></div>
+      </div>
+
       <section className="dw-admin-grid">
-        <div className="dw-admin-card dw-add-card"><h2>➕ Add Customer</h2><p>Add customers who ordered by phone or in person.</p><form onSubmit={addCustomer}>
-          <label>Customer Name<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Full name"/></label>
-          <label>WhatsApp Mobile<input required inputMode="numeric" maxLength="10" value={form.mobile} onChange={e=>setForm({...form,mobile:e.target.value.replace(/\D/g,"")})} placeholder="10-digit mobile"/></label>
-          <label>Delivery Address<textarea required rows="3" value={form.address} onChange={e=>setForm({...form,address:e.target.value})} placeholder="House / Room / Street / Area"/></label>
-          <div className="dw-two"><label>Plan<select value={form.plan} onChange={e=>setForm({...form,plan:e.target.value,amount:e.target.value==="Monthly Subscription"?"2800":"65"})}><option>Monthly Subscription</option><option>First Meal Trial</option></select></label><label>Amount (₹)<input type="number" value={form.amount} onChange={e=>setForm({...form,amount:e.target.value})}/></label></div>
-          <label>Start Date<input type="date" value={form.startDate} onChange={e=>setForm({...form,startDate:e.target.value})}/></label>
-          <label>Notes (optional)<textarea rows="2" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="Meal timing, instructions, etc."/></label>
-          <button className="dw-primary">Save Customer + Open WhatsApp →</button>
-        </form></div>
-        <div className="dw-admin-card"><div className="dw-list-head"><div><h2>👥 Customers</h2><p>Saved on this admin browser.</p></div><input placeholder="Search..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
-          {filtered.length===0 ? <div className="dw-empty">No customers added yet.</div> : <div className="dw-table-wrap"><table><thead><tr><th>Customer</th><th>Plan</th><th>Amount</th><th>Validity</th><th>Action</th></tr></thead><tbody>{filtered.map(c=><tr key={c.id}><td><b>{c.name}</b><small>{c.mobile}<br/>{c.address}</small></td><td>{c.plan}</td><td>₹{Number(c.amount).toLocaleString("en-IN")}</td><td>{c.startDate}<br/>to {c.endDate}</td><td><button className="dw-wa" onClick={()=>sendMessage(c)}>WhatsApp</button><button className="dw-delete" onClick={()=>removeCustomer(c.id)}>Delete</button></td></tr>)}</tbody></table></div>}
+        <div className="dw-admin-card dw-add-card"><h2>➕ Add Customer</h2><p>Set customer-wise rate, tiffin quota and payment.</p>
+          <form onSubmit={addCustomer}>
+            <label>Customer Name<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Full name"/></label>
+            <label>WhatsApp Mobile<input required inputMode="numeric" maxLength="10" value={form.mobile} onChange={e=>setForm({...form,mobile:e.target.value.replace(/\D/g,"")})} placeholder="10-digit mobile"/></label>
+            <label>Delivery Address<textarea required rows="3" value={form.address} onChange={e=>setForm({...form,address:e.target.value})} placeholder="House / Room / Street / Area"/></label>
+            <label>Area<input value={form.area} onChange={e=>setForm({...form,area:e.target.value})} placeholder="e.g. Kota / DD Nagar"/></label>
+            <div className="dw-two">
+              <label>Plan<select value={form.plan} onChange={e=>setForm({...form,plan:e.target.value})}><option>Monthly Subscription</option><option>Custom Subscription</option><option>First Meal Trial</option></select></label>
+              <label>Rate / Tiffin (₹)<input type="number" min="1" value={form.ratePerTiffin} onChange={e=>recalcAmount("ratePerTiffin",e.target.value)}/></label>
+            </div>
+            <div className="dw-two">
+              <label>Total Tiffins<input type="number" min="1" value={form.totalTiffins} onChange={e=>recalcAmount("totalTiffins",e.target.value)}/></label>
+              <label>Total Amount (₹)<input type="number" min="0" value={form.totalAmount} onChange={e=>setForm({...form,totalAmount:e.target.value})}/></label>
+            </div>
+            <div className="dw-two">
+              <label>Paid Amount (₹)<input type="number" min="0" value={form.paidAmount} onChange={e=>setForm({...form,paidAmount:e.target.value})}/></label>
+              <label>Pending Amount<input readOnly value={Math.max(0,Number(form.totalAmount||0)-Number(form.paidAmount||0))}/></label>
+            </div>
+            <label>Start Date<input type="date" value={form.startDate} onChange={e=>setForm({...form,startDate:e.target.value})}/></label>
+            <label>Notes<textarea rows="2" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="Meal timing, instructions, etc."/></label>
+            <div className="dw-live-summary"><b>Subscription Summary</b><span>{form.totalTiffins} tiffins × ₹{form.ratePerTiffin} = ₹{form.totalAmount}</span><span>Paid ₹{form.paidAmount} • Pending ₹{Math.max(0,Number(form.totalAmount||0)-Number(form.paidAmount||0))}</span></div>
+            <button className="dw-primary">Save Customer + Open WhatsApp →</button>
+          </form>
+        </div>
+
+        <div className="dw-admin-card"><div className="dw-list-head"><div><h2>👥 Customers</h2><p>Search and open a customer's daily tiffin account.</p></div><input placeholder="Search name, mobile, area..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+          {filtered.length===0 ? <div className="dw-empty">No customers added yet.</div> :
+            <div className="dw-customer-cards">{filtered.map(c=>{
+              const pay=paymentStatus(c);
+              return <div className="dw-customer-card" key={c.id}>
+                <div className="dw-customer-main"><div><h3>{c.name}</h3><small>{c.mobile} • {c.area||"Area not set"}</small><p>{c.address}</p></div><span className={`dw-status ${pay.toLowerCase().replace(" ","-")}`}>{pay}</span></div>
+                <div className="dw-balance-grid">
+                  <div><b>{c.totalTiffins}</b><span>Total Tiffins</span></div><div><b>{used(c)}</b><span>Used</span></div><div><b>{remaining(c)}</b><span>Remaining</span></div><div><b>₹{c.ratePerTiffin}</b><span>Per Tiffin</span></div>
+                </div>
+                <div className="dw-payment-row"><span>Total ₹{Number(c.totalAmount).toLocaleString("en-IN")}</span><span>Paid ₹{Number(c.paidAmount).toLocaleString("en-IN")}</span><span className="pending-text">Pending ₹{pending(c).toLocaleString("en-IN")}</span></div>
+                <div className="dw-actions"><button onClick={()=>setSelectedCustomer(c)}>📅 Daily Update</button><button onClick={()=>setEditPayment(c)}>💰 Payment</button><button className="dw-wa" onClick={()=>sendMessage(c)}>WhatsApp</button><button className="dw-delete" onClick={()=>removeCustomer(c.id)}>Delete</button></div>
+              </div>;
+            })}</div>}
         </div>
       </section>
-      <div className="dw-note">⚠️ This first version stores admin data in this browser only. For data to sync across phones/computers and for truly automatic WhatsApp messages, the next step is a database + WhatsApp Business API.</div>
+
+      {selectedCustomer && <section className="dw-admin-card dw-daily-card">
+        <div className="dw-daily-head"><div><h2>📅 Daily Tiffin Update — {selectedCustomer.name}</h2><p>{used(selectedCustomer)} used • <strong>{remaining(selectedCustomer)} remaining</strong></p></div><button onClick={()=>setSelectedCustomer(null)}>Close</button></div>
+        <div className="dw-date-control"><label>Select Date<input type="date" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)}/></label><button className="dw-off-btn" onClick={()=>fullDayOff(selectedCustomer,selectedDate)}>🟡 Mark Full Day OFF</button></div>
+        <div className="dw-meal-grid">{["morning","evening"].map(meal=>{
+          const status=selectedCustomer.dailyRecords?.[selectedDate]?.[meal]||"Not Updated";
+          return <div className="dw-meal-card" key={meal}><h3>{meal==="morning"?"☀️ Morning Tiffin":"🌙 Evening Tiffin"}</h3><strong className={`meal-${status.toLowerCase().replace(" ","-")}`}>{status}</strong>
+            <div><button onClick={()=>setMeal(selectedCustomer,selectedDate,meal,"Delivered")}>✅ Delivered</button><button onClick={()=>setMeal(selectedCustomer,selectedDate,meal,"OFF")}>🟡 OFF</button></div>
+          </div>;
+        })}</div>
+        <div className="dw-daily-note"><b>Rule:</b> Delivered = 1 used. OFF / Not Updated = balance does not decrease. Sunday can be used for one meal only according to the service schedule.</div>
+      </section>}
+
+      {editPayment && <div className="dw-modal-overlay" onClick={()=>setEditPayment(null)}><div className="dw-payment-modal" onClick={e=>e.stopPropagation()}>
+        <button className="dw-modal-close" onClick={()=>setEditPayment(null)}>×</button><h2>💰 Update Payment</h2><p>{editPayment.name}</p>
+        <label>Total Amount<input readOnly value={`₹${editPayment.totalAmount}`}/></label>
+        <label>Paid Amount<input id="dw-paid-input" type="number" min="0" max={editPayment.totalAmount} defaultValue={editPayment.paidAmount}/></label>
+        <div className="dw-payment-preview">Pending: ₹{pending(editPayment)}</div>
+        <button className="dw-primary" onClick={()=>updatePayment(editPayment,document.getElementById("dw-paid-input")?.value)}>Save Payment</button>
+      </div></div>}
+
+      <div className="dw-note">⚠️ Current version stores customer/tiffin/payment data in this browser only. To show the same live balance on the customer's phone, we need a shared database connected to Admin and Customer Login.</div>
     </main>
+
     <style>{`
-.dw-admin-page{min-height:100vh;background:#f7f3ef;color:#292524;font-family:inherit}
-.dw-admin-top{background:#fff;border-bottom:1px solid #eadfd7;padding:14px 22px;display:flex;align-items:center;justify-content:space-between}
-.dw-admin-brand{display:flex;align-items:center;gap:9px}
-.dw-admin-brand img{width:38px;height:38px;object-fit:contain;border-radius:9px}
-.brand-icon img{width:100%;height:100%;object-fit:contain;border-radius:10px}
-.dw-logo-img{width:76px;height:76px;object-fit:contain;display:block;margin:0 auto 8px}
-`}</style>
+      .dw-admin-page{min-height:100vh;background:#f7f3ef;color:#292524;font-family:inherit}
+      .dw-admin-top{background:#fff;border-bottom:1px solid #eadfd7;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+      .dw-admin-top>button,.dw-daily-head>button{border:1px solid #ddd3cc;background:#fff;border-radius:10px;padding:10px 16px;cursor:pointer}
+      .dw-admin-brand{display:flex;align-items:center;gap:10px}.dw-admin-brand img{width:130px;height:52px;object-fit:contain;display:block}
+      .dw-admin-brand div{display:flex;flex-direction:column;gap:2px}.dw-admin-brand strong{font-size:19px}.dw-admin-brand span{font-size:10px;font-weight:800;color:#f06b2d;letter-spacing:.7px}
+      .dw-admin-top small{color:#777;display:block;margin-top:2px}.dw-admin-wrap{max-width:1400px;margin:auto;padding:24px}
+      .dw-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}.dw-stats>div{background:#fff;border:1px solid #eadfd7;border-radius:15px;padding:17px;display:flex;flex-direction:column;gap:4px}.dw-stats b{font-size:25px}.dw-stats span{font-size:12px;color:#777}
+      .dw-admin-grid{display:grid;grid-template-columns:minmax(330px,410px) 1fr;gap:20px;align-items:start}.dw-admin-card{background:#fff;border:1px solid #eadfd7;border-radius:18px;padding:20px;box-shadow:0 8px 25px rgba(50,35,25,.04)}
+      .dw-admin-card h2{margin:0 0 6px}.dw-admin-card p{color:#777;font-size:13px}.dw-add-card form{display:flex;flex-direction:column;gap:13px}
+      .dw-add-card label,.dw-payment-modal label,.dw-date-control label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:700}
+      .dw-add-card input,.dw-add-card textarea,.dw-add-card select,.dw-list-head input,.dw-payment-modal input,.dw-date-control input{width:100%;box-sizing:border-box;border:1px solid #ddd3cc;border-radius:10px;padding:11px 12px;background:#fff;font:inherit;color:#292524;outline:none}
+      .dw-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.dw-primary{border:0;border-radius:10px;padding:13px 15px;background:#f06b2d;color:#fff;font-weight:800;cursor:pointer}
+      .dw-live-summary{display:flex;flex-direction:column;gap:4px;background:#fff8ef;border:1px solid #f2d7bd;border-radius:12px;padding:12px;font-size:12px}
+      .dw-list-head{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;margin-bottom:15px}.dw-list-head input{max-width:260px}
+      .dw-customer-cards{display:flex;flex-direction:column;gap:12px}.dw-customer-card{border:1px solid #eadfd7;border-radius:15px;padding:15px}
+      .dw-customer-main{display:flex;justify-content:space-between;gap:15px}.dw-customer-main h3{margin:0 0 4px}.dw-customer-main small{color:#777}.dw-customer-main p{margin:6px 0 0}
+      .dw-status{height:max-content;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:800;background:#fff0e8;color:#f06b2d;white-space:nowrap}.dw-status.paid{background:#eaf8ef;color:#16803b}.dw-status.half-payment{background:#fff7df;color:#9a6800}.dw-status.pending{background:#fff0f0;color:#c62828}
+      .dw-balance-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}.dw-balance-grid div{background:#faf8f6;border-radius:10px;padding:10px}.dw-balance-grid b,.dw-balance-grid span{display:block}.dw-balance-grid span{font-size:10px;color:#777;margin-top:3px}
+      .dw-payment-row{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;padding:10px 0;border-top:1px solid #eee}.pending-text{font-weight:800;color:#c62828}
+      .dw-actions{display:flex;gap:7px;flex-wrap:wrap}.dw-actions button,.dw-meal-card button,.dw-off-btn{border:1px solid #ddd3cc;background:#fff;border-radius:9px;padding:8px 10px;cursor:pointer;font-weight:700;font-size:12px}.dw-actions .dw-wa{background:#25d366;color:#fff;border-color:#25d366}.dw-delete{color:#c62828!important}
+      .dw-empty{padding:35px;text-align:center;color:#777}.dw-daily-card{margin-top:20px}.dw-daily-head{display:flex;justify-content:space-between;align-items:center;gap:15px}
+      .dw-date-control{display:flex;align-items:end;gap:12px;margin:18px 0}.dw-date-control label{width:220px}.dw-off-btn{background:#fff7df;border-color:#f0d890}
+      .dw-meal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.dw-meal-card{border:1px solid #eadfd7;border-radius:14px;padding:16px}.dw-meal-card h3{margin:0 0 8px}.dw-meal-card strong{display:block;margin-bottom:12px}.meal-delivered{color:#16803b}.meal-off{color:#9a6800}.meal-not-updated{color:#777}.dw-meal-card>div{display:flex;gap:8px}
+      .dw-daily-note{margin-top:14px;background:#faf8f6;border-radius:10px;padding:11px;font-size:12px;color:#666}
+      .dw-modal-overlay{position:fixed;inset:0;background:rgba(30,25,20,.58);display:flex;align-items:center;justify-content:center;padding:20px;z-index:99999}.dw-payment-modal{width:min(420px,100%);background:#fff;border-radius:18px;padding:24px;position:relative;box-sizing:border-box}
+      .dw-payment-modal h2{margin:0 0 4px}.dw-payment-modal>p{margin:0 0 18px}.dw-payment-modal label{margin-bottom:12px}.dw-modal-close{position:absolute;right:12px;top:12px;border:1px solid #ddd3cc;background:#fff;border-radius:50%;width:32px;height:32px;font-size:20px;cursor:pointer}
+      .dw-payment-preview{background:#fff8ef;border-radius:10px;padding:11px;margin-bottom:12px;font-weight:700}.dw-note{margin-top:18px;padding:13px 15px;background:#fff7df;border:1px solid #f0d890;border-radius:12px;color:#725b16;font-size:12px}
+      @media(max-width:1050px){.dw-stats{grid-template-columns:repeat(3,1fr)}.dw-admin-grid{grid-template-columns:1fr}}
+      @media(max-width:650px){.dw-admin-wrap{padding:12px}.dw-admin-top{padding:10px 12px}.dw-admin-brand img{width:105px;height:44px}.dw-admin-brand strong{font-size:16px}.dw-stats{grid-template-columns:repeat(2,1fr)}.dw-two,.dw-meal-grid{grid-template-columns:1fr}.dw-list-head{flex-direction:column}.dw-list-head input{max-width:none}.dw-balance-grid{grid-template-columns:repeat(2,1fr)}.dw-date-control{flex-direction:column;align-items:stretch}.dw-date-control label{width:auto}}
+    `}</style>
   </div>;
 }
 
