@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Login from "./pages/Login";
+import logo from "./assets/dabba-wala-logo.png";
 import "./App.css";
 
 
@@ -64,14 +65,14 @@ function AdminPanel() {
     window.open(`https://wa.me/91${c.mobile}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
-  if (!loggedIn) return <div className="dw-admin-login"><div className="dw-admin-card"><div className="dw-logo">🍱</div><h1>Dabba Wala</h1><p>Owner Admin Panel</p><form onSubmit={login}><input type="password" placeholder="Admin PIN" value={password} onChange={e=>setPassword(e.target.value)} autoFocus/><button>Login to Admin</button></form><small>Owner access only</small></div></div>;
+  if (!loggedIn) return <div className="dw-admin-login"><div className="dw-admin-card"><img className="dw-logo-img" src={logo} alt="Dabba Wala Logo" /><h1>Dabba Wala</h1><p>Owner Admin Panel</p><form onSubmit={login}><input type="password" placeholder="Admin PIN" value={password} onChange={e=>setPassword(e.target.value)} autoFocus/><button>Login to Admin</button></form><small>Owner access only</small></div></div>;
 
   const filtered = customers.filter(c => [c.name,c.mobile,c.plan,c.address].join(" ").toLowerCase().includes(search.toLowerCase()));
   const active = customers.filter(c => c.status === "Active").length;
   const revenue = customers.reduce((s,c)=>s+Number(c.amount||0),0);
 
   return <div className="dw-admin-page">
-    <header className="dw-admin-top"><div><div className="dw-admin-brand">🍱 Dabba Wala <span>OWNER ADMIN</span></div><small>Customer & Subscription Management</small></div><button onClick={()=>{localStorage.removeItem("dw_admin_auth");setLoggedIn(false)}}>Logout</button></header>
+    <header className="dw-admin-top"><div><div className="dw-admin-brand"><img src={logo} alt="Dabba Wala Logo" /> Dabba Wala <span>OWNER ADMIN</span></div><small>Customer & Subscription Management</small></div><button onClick={()=>{localStorage.removeItem("dw_admin_auth");setLoggedIn(false)}}>Logout</button></header>
     <main className="dw-admin-wrap">
       <div className="dw-stats"><div><b>{customers.length}</b><span>Total Customers</span></div><div><b>{active}</b><span>Active Subscriptions</span></div><div><b>₹{revenue.toLocaleString("en-IN")}</b><span>Total Recorded</span></div></div>
       <section className="dw-admin-grid">
@@ -90,7 +91,14 @@ function AdminPanel() {
       </section>
       <div className="dw-note">⚠️ This first version stores admin data in this browser only. For data to sync across phones/computers and for truly automatic WhatsApp messages, the next step is a database + WhatsApp Business API.</div>
     </main>
-    <style>{` .dw-admin-page{min-height:100vh;background:#f7f3ef;color:#292524;font-family:inherit}.dw-admin-top{background:#fff;padding:18px 5%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eadfd7;position:sticky;top:0;z-index:5}.dw-admin-brand{font-size:22px;font-weight:900}.dw-admin-brand span{font-size:10px;background:#fff0e5;color:#f06b2d;padding:5px 8px;border-radius:20px;margin-left:8px}.dw-admin-top small{color:#777}.dw-admin-top button{border:1px solid #ddd3cc;background:#fff;padding:9px 15px;border-radius:9px;cursor:pointer}.dw-admin-wrap{max-width:1200px;margin:auto;padding:28px 18px}.dw-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:20px}.dw-stats>div{background:#fff;padding:20px;border:1px solid #eadfd7;border-radius:16px}.dw-stats b{display:block;font-size:28px;color:#f06b2d}.dw-stats span{color:#777;font-size:13px}.dw-admin-grid{display:grid;grid-template-columns:380px 1fr;gap:20px}.dw-admin-card{background:#fff;border:1px solid #eadfd7;border-radius:18px;padding:22px}.dw-admin-card h2{margin:0 0 5px}.dw-admin-card p{margin:0 0 18px;color:#777;font-size:13px}.dw-admin-card form{display:flex;flex-direction:column;gap:12px}.dw-admin-card label{font-size:13px;font-weight:800;display:flex;flex-direction:column;gap:6px}.dw-admin-card input,.dw-admin-card textarea,.dw-admin-card select{font:inherit;padding:11px;border:1px solid #ddd3cc;border-radius:9px;box-sizing:border-box;width:100%;background:#fff}.dw-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.dw-primary{border:0;background:#f06b2d;color:#fff;padding:13px;border-radius:10px;font-weight:800;cursor:pointer}.dw-list-head{display:flex;justify-content:space-between;gap:15px;align-items:flex-start}.dw-list-head>input{max-width:210px}.dw-table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:12px 8px;border-bottom:1px solid #eee;vertical-align:top}td small{display:block;color:#777;margin-top:4px;line-height:1.45}.dw-wa,.dw-delete{border:0;border-radius:7px;padding:7px 9px;cursor:pointer;margin:2px;font-weight:700}.dw-wa{background:#25d366;color:#fff}.dw-delete{background:#fff0f0;color:#c62828}.dw-empty{text-align:center;padding:50px;color:#888}.dw-note{margin-top:20px;background:#fff8ef;border:1px solid #f2d7bd;padding:13px 15px;border-radius:12px;font-size:13px;color:#6b625c}.dw-admin-login{min-height:100vh;background:#f7f3ef;display:grid;place-items:center;padding:20px}.dw-admin-login .dw-admin-card{width:min(390px,100%);text-align:center}.dw-logo{font-size:45px}.dw-admin-login h1{margin:4px}.dw-admin-login p{color:#777}.dw-admin-login form{display:flex;gap:10px;flex-direction:column}.dw-admin-login input{padding:13px;border:1px solid #ddd;border-radius:9px}.dw-admin-login button{padding:13px;background:#f06b2d;color:#fff;border:0;border-radius:9px;font-weight:800}.dw-admin-login small{display:block;color:#999;margin-top:14px}@media(max-width:850px){.dw-admin-grid{grid-template-columns:1fr}.dw-stats{grid-template-columns:1fr}.dw-admin-top{padding:15px}.dw-list-head{flex-direction:column}.dw-list-head>input{max-width:none}}`}</style>
+    <style>{`
+.dw-admin-page{min-height:100vh;background:#f7f3ef;color:#292524;font-family:inherit}
+.dw-admin-top{background:#fff;border-bottom:1px solid #eadfd7;padding:14px 22px;display:flex;align-items:center;justify-content:space-between}
+.dw-admin-brand{display:flex;align-items:center;gap:9px}
+.dw-admin-brand img{width:38px;height:38px;object-fit:contain;border-radius:9px}
+.brand-icon img{width:100%;height:100%;object-fit:contain;border-radius:10px}
+.dw-logo-img{width:76px;height:76px;object-fit:contain;display:block;margin:0 auto 8px}
+`}</style>
   </div>;
 }
 
@@ -181,7 +189,7 @@ function App() {
       <header className="navbar">
         <div className="container nav-inner">
           <div className="brand">
-            <div className="brand-icon">🍱</div>
+            <div className="brand-icon"><img src={logo} alt="Dabba Wala Logo" /></div>
             <div>
               <h2>Dabba Wala</h2>
               <span>Fresh • Homely • Healthy</span>
@@ -774,7 +782,7 @@ function App() {
         <div className="container footer-grid">
           <div className="footer-brand">
             <div className="brand">
-              <div className="brand-icon">🍱</div>
+              <div className="brand-icon"><img src={logo} alt="Dabba Wala Logo" /></div>
               <div>
                 <h2>Dabba Wala</h2>
                 <span>Fresh • Homely • Healthy</span>
