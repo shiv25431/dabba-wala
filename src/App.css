@@ -74,15 +74,18 @@ a {
 }
 
 .brand-icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 15px;
-  background: #fff0d8;
+  width: 150px;
+  height: 58px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 23px;
   flex-shrink: 0;
+}
+
+.dw-header-logo {
+  width: 150px;
+  height: 58px;
+  object-fit: contain;
+  display: block;
 }
 
 .brand h2 {

@@ -189,7 +189,7 @@ function App() {
       <header className="navbar">
         <div className="container nav-inner">
           <div className="brand">
-            <div className="brand-icon"><img src={logo} alt="Dabba Wala Logo" /></div>
+            <div className="brand-icon"><img className="dw-header-logo" src={logo} alt="Dabba Wala Logo" /></div>
             <div>
               <h2>Dabba Wala</h2>
               <span>Fresh • Homely • Healthy</span>
