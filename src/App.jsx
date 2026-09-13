@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import Login from "./pages/Login";
 import logo from "./assets/dabba-wala-logo.png";
 import "./App.css";
 
@@ -273,6 +272,204 @@ function AdminPanel() {
   </div>;
 }
 
+
+function CustomerPortal() {
+  const today = new Date().toISOString().slice(0, 10);
+  const [mobile, setMobile] = useState("");
+  const [password, setPassword] = useState("");
+  const [customer, setCustomer] = useState(() => {
+    const id = localStorage.getItem("dw_customer_auth");
+    if (!id) return null;
+    try {
+      const list = JSON.parse(localStorage.getItem("dw_customers") || "[]");
+      return list.find(c => String(c.id) === String(id)) || null;
+    } catch { return null; }
+  });
+  const [error, setError] = useState("");
+  const [selectedDate, setSelectedDate] = useState(today);
+
+  const used = (c) => Object.values(c?.dailyRecords || {}).reduce(
+    (n, d) => n + (d?.morning === "Delivered" ? 1 : 0) + (d?.evening === "Delivered" ? 1 : 0), 0
+  );
+
+  const remaining = (c) => Math.max(0, Number(c?.totalTiffins || 0) - used(c));
+
+  const paymentStatus = (c) => {
+    const total = Number(c?.totalAmount || 0);
+    const paid = Number(c?.paidAmount || 0);
+    if (paid >= total && total > 0) return "Paid";
+    if (paid > 0) return "Half Payment";
+    return "Pending";
+  };
+
+  const subscriptionStatus = (c) => {
+    if (!c?.endDate) return "Active";
+    const end = new Date(c.endDate + "T23:59:59");
+    return end >= new Date() && c.status !== "Expired" ? "Active" : "Expired";
+  };
+
+  const login = (e) => {
+    e.preventDefault();
+    setError("");
+    const cleanMobile = mobile.replace(/\D/g, "");
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem("dw_customers") || "[]"); } catch {}
+    const found = list.find(c => c.mobile === cleanMobile && cleanMobile.length === 10);
+    if (!found || password !== cleanMobile) {
+      setError("Invalid mobile number or password.");
+      return;
+    }
+    localStorage.setItem("dw_customer_auth", String(found.id));
+    setCustomer(found);
+    setPassword("");
+  };
+
+  const logout = () => {
+    localStorage.removeItem("dw_customer_auth");
+    setCustomer(null);
+    setMobile("");
+    setPassword("");
+  };
+
+  if (!customer) return (
+    <div className="dw-customer-login-page">
+      <div className="dw-customer-login-card">
+        <img src={logo} alt="Dabba Wala Logo" className="dw-customer-login-logo" />
+        <span className="dw-customer-login-tag">CUSTOMER LOGIN</span>
+        <h1>Welcome to Dabba Wala</h1>
+        <p>Check your tiffin subscription and payment status.</p>
+        <form onSubmit={login}>
+          <label>Mobile Number
+            <input
+              type="tel"
+              inputMode="numeric"
+              maxLength="10"
+              placeholder="Enter your 10-digit mobile number"
+              value={mobile}
+              onChange={e => setMobile(e.target.value.replace(/\D/g, ""))}
+              autoFocus
+            />
+          </label>
+          <label>Password
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength="10"
+              placeholder="Your mobile number"
+              value={password}
+              onChange={e => setPassword(e.target.value.replace(/\D/g, ""))}
+            />
+          </label>
+          {error && <div className="dw-customer-login-error">{error}</div>}
+          <button type="submit">Login to My Account →</button>
+        </form>
+        <small>Password is your registered mobile number.</small>
+        <button className="dw-back-home" onClick={() => window.location.href = "/"}>← Back to Home</button>
+      </div>
+    </div>
+  );
+
+  // Refresh the customer record from local storage so the customer sees the latest admin update.
+  let latestCustomer = customer;
+  try {
+    const list = JSON.parse(localStorage.getItem("dw_customers") || "[]");
+    latestCustomer = list.find(c => c.id === customer.id) || customer;
+  } catch {}
+
+  const subStatus = subscriptionStatus(latestCustomer);
+  const payStatus = paymentStatus(latestCustomer);
+  const day = latestCustomer.dailyRecords?.[selectedDate] || {};
+  const remainingTiffins = remaining(latestCustomer);
+
+  return (
+    <div className="dw-customer-page">
+      <header className="dw-customer-header">
+        <div className="dw-customer-brand">
+          <img src={logo} alt="Dabba Wala Logo" />
+          <div><strong>Dabba Wala</strong><span>MY TIFFIN ACCOUNT</span></div>
+        </div>
+        <button onClick={logout}>↪ Logout</button>
+      </header>
+
+      <main className="dw-customer-main">
+        <div className="dw-customer-welcome">
+          <div>
+            <span>WELCOME BACK 👋</span>
+            <h1>Hello, {latestCustomer.name}</h1>
+            <p>Here is your current Dabba Wala subscription status.</p>
+          </div>
+          <div className="dw-customer-mobile">📱 {latestCustomer.mobile}</div>
+        </div>
+
+        <div className="dw-customer-status-grid">
+          <div className="dw-c-status-card subscription">
+            <span>SUBSCRIPTION</span>
+            <strong>{subStatus}</strong>
+            <small>{latestCustomer.startDate} → {latestCustomer.endDate}</small>
+          </div>
+          <div className={`dw-c-status-card payment ${payStatus.toLowerCase().replace(" ", "-")}`}>
+            <span>PAYMENT STATUS</span>
+            <strong>{payStatus}</strong>
+            <small>Your payment status</small>
+          </div>
+          <div className="dw-c-status-card tiffin">
+            <span>TIFFINS REMAINING</span>
+            <strong>{remainingTiffins}</strong>
+            <small>Your remaining tiffins</small>
+          </div>
+        </div>
+
+        <section className="dw-customer-card-box">
+          <div className="dw-c-box-head">
+            <div><span className="dw-c-label">MY ACCOUNT</span><h2>My Subscription</h2></div>
+            <span className={`dw-c-pill ${subStatus.toLowerCase()}`}>{subStatus}</span>
+          </div>
+          <div className="dw-c-info-grid">
+            <div><span>Plan</span><b>{latestCustomer.plan}</b></div>
+            <div><span>Valid Till</span><b>{latestCustomer.endDate}</b></div>
+            <div><span>Delivery Area</span><b>{latestCustomer.area || "—"}</b></div>
+            <div><span>Delivery Address</span><b>{latestCustomer.address}</b></div>
+          </div>
+        </section>
+
+        <section className="dw-customer-card-box">
+          <div className="dw-c-box-head">
+            <div><span className="dw-c-label">DAILY SERVICE</span><h2>My Tiffin Status</h2></div>
+            <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
+          </div>
+          <div className="dw-c-meals">
+            <div><span>☀️ Morning Tiffin</span><b className={day.morning === "Delivered" ? "delivered" : day.morning === "OFF" ? "off" : "not-updated"}>{day.morning || "Not Updated"}</b></div>
+            <div><span>🌙 Evening Tiffin</span><b className={day.evening === "Delivered" ? "delivered" : day.evening === "OFF" ? "off" : "not-updated"}>{day.evening || "Not Updated"}</b></div>
+          </div>
+          <p className="dw-c-note">Your daily delivery status is updated by Dabba Wala.</p>
+        </section>
+
+        <div className="dw-customer-help">
+          <div><strong>Need help?</strong><span>Contact Dabba Wala for any subscription or delivery query.</span></div>
+          <a href="https://wa.me/917223050454" target="_blank" rel="noreferrer">💬 WhatsApp Us</a>
+        </div>
+      </main>
+
+      <style>{`
+        .dw-customer-login-page{min-height:100vh;background:radial-gradient(circle at 50% 0,#fff8ef 0,#f7f3ef 50%,#eee8e2 100%);display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;font-family:Inter,Arial,sans-serif;color:#172033}
+        .dw-customer-login-card{width:min(410px,100%);background:#fff;border:1px solid #e8dfd8;border-radius:24px;padding:34px;box-shadow:0 20px 65px rgba(45,32,22,.12);text-align:center;box-sizing:border-box}
+        .dw-customer-login-logo{width:155px;height:70px;object-fit:contain;margin:0 auto 8px}
+        .dw-customer-login-tag{display:inline-block;background:#fff1e7;color:#ed6420;border-radius:999px;padding:6px 11px;font-size:10px;font-weight:900;letter-spacing:.8px}
+        .dw-customer-login-card h1{font-size:24px;margin:13px 0 5px}.dw-customer-login-card>p{font-size:12px;color:#777;margin:0 0 23px}
+        .dw-customer-login-card form{text-align:left;display:flex;flex-direction:column;gap:12px}.dw-customer-login-card label{font-size:11px;font-weight:900;display:flex;flex-direction:column;gap:6px}.dw-customer-login-card input{width:100%;box-sizing:border-box;border:1px solid #ddd6d0;border-radius:10px;padding:12px 13px;font:inherit;font-size:13px;outline:none}.dw-customer-login-card input:focus{border-color:#f36a26;box-shadow:0 0 0 3px rgba(243,106,38,.08)}
+        .dw-customer-login-card form button{border:0;border-radius:10px;padding:13px;background:linear-gradient(135deg,#ff741b,#f15e20);color:#fff;font-weight:900;cursor:pointer;font-size:13px;margin-top:2px}.dw-customer-login-card small{display:block;color:#999;font-size:10px;margin-top:14px}.dw-back-home{border:0;background:none;color:#e76526;font-weight:800;cursor:pointer;font-size:11px;margin-top:17px}.dw-customer-login-error{background:#fff0f0;color:#c52e42;border:1px solid #f1c5cc;border-radius:9px;padding:9px;font-size:11px}
+        .dw-customer-page{min-height:100vh;background:#f8f7f5;color:#172033;font-family:Inter,Arial,sans-serif}.dw-customer-header{height:76px;background:#fff;border-bottom:1px solid #e8e2dd;padding:0 6%;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box}.dw-customer-brand{display:flex;align-items:center;gap:10px}.dw-customer-brand img{width:48px;height:48px;object-fit:contain}.dw-customer-brand strong{display:block;font-size:19px;color:#123f35}.dw-customer-brand span{display:block;font-size:8px;letter-spacing:.8px;color:#ef6425;font-weight:900;margin-top:2px}.dw-customer-header button{border:1px solid #e0d9d3;background:#fff;border-radius:9px;padding:10px 14px;font-weight:800;cursor:pointer}.dw-customer-header button:hover{border-color:#ef6a2b;color:#ef6a2b}
+        .dw-customer-main{max-width:1050px;margin:auto;padding:35px 22px 55px}.dw-customer-welcome{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:22px}.dw-customer-welcome span,.dw-c-label{font-size:10px;color:#e35d22;font-weight:900;letter-spacing:.5px}.dw-customer-welcome h1{margin:4px 0;font-size:29px;letter-spacing:-.5px}.dw-customer-welcome p{margin:0;color:#747b83;font-size:12px}.dw-customer-mobile{background:#fff;border:1px solid #e4ded9;border-radius:999px;padding:10px 14px;color:#525a62;font-size:11px;font-weight:800}
+        .dw-customer-status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:17px}.dw-c-status-card{background:#fff;border:1px solid #e6e0db;border-radius:15px;padding:17px;box-shadow:0 5px 20px rgba(30,25,20,.035)}.dw-c-status-card span{display:block;font-size:9px;font-weight:900;color:#777}.dw-c-status-card strong{display:block;font-size:24px;margin:7px 0 3px}.dw-c-status-card small{font-size:10px;color:#8a8f95}.dw-c-status-card.subscription strong{color:#188d4b}.dw-c-status-card.payment.paid strong{color:#188d4b}.dw-c-status-card.payment.pending strong{color:#c92e45}.dw-c-status-card.payment.half-payment strong{color:#9b6b00}.dw-c-status-card.tiffin strong{color:#ed7621}
+        .dw-customer-card-box{background:#fff;border:1px solid #e6e0db;border-radius:16px;padding:20px;margin-top:14px;box-shadow:0 5px 20px rgba(30,25,20,.035)}.dw-c-box-head{display:flex;align-items:center;justify-content:space-between;gap:15px;border-bottom:1px solid #eee9e5;padding-bottom:14px}.dw-c-box-head h2{margin:3px 0 0;font-size:18px}.dw-c-box-head input{border:1px solid #ddd7d2;border-radius:8px;padding:9px;font:inherit;font-size:11px}.dw-c-pill{padding:6px 10px;border-radius:999px;font-size:9px;font-weight:900}.dw-c-pill.active{background:#e6f8ed;color:#168340}.dw-c-pill.expired{background:#ffecef;color:#c72d45}
+        .dw-c-info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0}.dw-c-info-grid>div{padding:14px 10px 3px 0}.dw-c-info-grid span{display:block;color:#8a8f95;font-size:10px;margin-bottom:4px}.dw-c-info-grid b{font-size:12px;line-height:1.4}
+        .dw-c-meals{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:17px}.dw-c-meals>div{background:#faf9f7;border:1px solid #ebe5df;border-radius:12px;padding:15px;display:flex;align-items:center;justify-content:space-between;gap:12px}.dw-c-meals span{font-size:12px;font-weight:800}.dw-c-meals b{font-size:10px;border-radius:999px;padding:6px 9px}.dw-c-meals .delivered{background:#e6f8ed;color:#168340}.dw-c-meals .off{background:#fff3d6;color:#9b6b00}.dw-c-meals .not-updated{background:#eef0f2;color:#69717a}.dw-c-note{font-size:10px;color:#8b9095;margin:12px 0 0}.dw-customer-help{margin-top:17px;background:linear-gradient(100deg,#fff7eb,#fffdf9);border:1px solid #f0ddc8;border-radius:14px;padding:15px 17px;display:flex;align-items:center;justify-content:space-between;gap:15px}.dw-customer-help strong{display:block;font-size:12px}.dw-customer-help span{display:block;color:#777;font-size:10px;margin-top:3px}.dw-customer-help a{background:#19b957;color:#fff;text-decoration:none;border-radius:9px;padding:9px 12px;font-size:10px;font-weight:900;white-space:nowrap}
+        @media(max-width:650px){.dw-customer-header{padding:0 15px}.dw-customer-main{padding:25px 14px 40px}.dw-customer-welcome{align-items:flex-start;flex-direction:column}.dw-customer-welcome h1{font-size:24px}.dw-customer-mobile{font-size:10px}.dw-customer-status-grid{grid-template-columns:1fr}.dw-c-info-grid{grid-template-columns:1fr}.dw-c-meals{grid-template-columns:1fr}.dw-customer-help{align-items:flex-start;flex-direction:column}.dw-customer-help a{width:100%;text-align:center;box-sizing:border-box}.dw-c-box-head{align-items:flex-start}.dw-c-box-head input{max-width:135px}.dw-customer-login-card{padding:28px 20px}}
+      `}</style>
+    </div>
+  );
+}
+
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showPlans, setShowPlans] = useState(false);
@@ -287,7 +484,7 @@ function App() {
   }
 
   if (location.pathname === "/login") {
-    return <Login />;
+    return <CustomerPortal />;
   }
 
   const scrollToMenu = () => {
