@@ -277,6 +277,7 @@ function CustomerPortal() {
   const today = new Date().toISOString().slice(0, 10);
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [customer, setCustomer] = useState(() => {
     const id = localStorage.getItem("dw_customer_auth");
     if (!id) return null;
@@ -333,43 +334,102 @@ function CustomerPortal() {
 
   if (!customer) return (
     <div className="dw-customer-login-page">
-      <div className="dw-customer-login-card">
-        <img src={logo} alt="Dabba Wala Logo" className="dw-customer-login-logo" />
-        <span className="dw-customer-login-tag">CUSTOMER LOGIN</span>
-        <h1>Welcome to Dabba Wala</h1>
-        <p>Check your tiffin subscription and payment status.</p>
-        <form onSubmit={login}>
-          <label>Mobile Number
-            <input
-              type="tel"
-              inputMode="numeric"
-              maxLength="10"
-              placeholder="Enter your 10-digit mobile number"
-              value={mobile}
-              onChange={e => setMobile(e.target.value.replace(/\D/g, ""))}
-              autoFocus
-            />
-          </label>
-          <label>Password
-            <input
-              type="password"
-              inputMode="numeric"
-              maxLength="10"
-              placeholder="Your mobile number"
-              value={password}
-              onChange={e => setPassword(e.target.value.replace(/\D/g, ""))}
-            />
-          </label>
-          {error && <div className="dw-customer-login-error">{error}</div>}
-          <button type="submit">Login to My Account →</button>
-        </form>
-        <small>Password is your registered mobile number.</small>
-        <button className="dw-back-home" onClick={() => window.location.href = "/"}>← Back to Home</button>
+      <div className="dw-login-decoration leaf-one">🌿</div>
+      <div className="dw-login-decoration leaf-two">🍃</div>
+
+      <div className="dw-login-layout">
+        <section className="dw-login-showcase">
+          <div className="dw-showcase-brand">
+            <img src={logo} alt="Dabba Wala Logo" />
+          </div>
+          <div className="dw-showcase-content">
+            <span className="dw-showcase-kicker">YOUR DAILY TIFFIN PARTNER</span>
+            <h1>Fresh Homemade<br/><span>Meals, Every Day</span></h1>
+            <p>Ghar jaisa khana, simple service aur timely delivery — made especially for your everyday routine.</p>
+
+            <div className="dw-login-benefits">
+              <div><b>🌿</b><span>Healthy<br/>Meals</span></div>
+              <div><b>🏠</b><span>Homely<br/>Taste</span></div>
+              <div><b>🛵</b><span>On-Time<br/>Delivery</span></div>
+              <div><b>❤️</b><span>Made with<br/>Care</span></div>
+            </div>
+          </div>
+
+          <div className="dw-food-visual">
+            <div className="dw-food-plate">
+              <div className="dw-food-bowl bowl-dal">🥣</div>
+              <div className="dw-food-bowl bowl-rice">🍚</div>
+              <div className="dw-food-bowl bowl-sabji">🍛</div>
+              <div className="dw-food-bowl bowl-roti">🫓</div>
+              <div className="dw-food-bowl bowl-salad">🥗</div>
+            </div>
+          </div>
+
+          <div className="dw-showcase-quote">“Ghar jaisa khana,<br/>har din aapke liye.” <span>♥</span></div>
+        </section>
+
+        <section className="dw-login-panel">
+          <div className="dw-customer-login-card">
+            <div className="dw-login-user-icon">👤</div>
+            <span className="dw-customer-login-tag">CUSTOMER LOGIN</span>
+            <h2>Welcome to Dabba Wala</h2>
+            <p>Check your tiffin subscription and payment status</p>
+
+            <form onSubmit={login}>
+              <label>
+                Mobile Number
+                <div className="dw-login-input-wrap">
+                  <span>☎</span>
+                  <input type="tel" inputMode="numeric" maxLength="10" placeholder="Enter your 10-digit mobile number" value={mobile} onChange={e => setMobile(e.target.value.replace(/\D/g, ""))} autoFocus />
+                </div>
+              </label>
+
+              <label>
+                Password
+                <div className="dw-login-input-wrap">
+                  <span>🔒</span>
+                  <input type={showPassword ? "text" : "password"} inputMode="numeric" maxLength="10" placeholder="Your mobile number" value={password} onChange={e => setPassword(e.target.value.replace(/\D/g, ""))} />
+                  <button type="button" className="dw-password-eye" onClick={() => setShowPassword(v => !v)} aria-label="Show password">{showPassword ? "🙈" : "👁"}</button>
+                </div>
+              </label>
+
+              {error && <div className="dw-customer-login-error">⚠ {error}</div>}
+
+              <button type="submit" className="dw-customer-login-submit">Login to My Account <span>→</span></button>
+            </form>
+
+            <div className="dw-login-divider"><span>OR</span></div>
+            <button className="dw-back-home" onClick={() => window.location.href = "/"}>⌂ &nbsp; Back to Home</button>
+
+            <div className="dw-login-safe">
+              <span>✓</span>
+              <div><strong>Your information is safe with us.</strong><small>For any help, contact us on WhatsApp.</small></div>
+            </div>
+          </div>
+        </section>
       </div>
+
+      <style>{`
+        .dw-customer-login-page{min-height:100vh;background:linear-gradient(135deg,#fffdf9 0%,#fbf6ef 48%,#f5eee5 100%);display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;font-family:Inter,Arial,sans-serif;color:#172033;position:relative;overflow:hidden}
+        .dw-login-layout{width:min(1240px,100%);min-height:720px;display:grid;grid-template-columns:1.05fr .95fr;background:rgba(255,255,255,.72);border:1px solid #eadfd4;border-radius:30px;box-shadow:0 25px 80px rgba(68,49,31,.12);overflow:hidden;position:relative;z-index:2}
+        .dw-login-showcase{position:relative;padding:42px 54px 38px;overflow:hidden;background:radial-gradient(circle at 76% 68%,#fff1df 0,#fff7ed 27%,rgba(255,248,239,.3) 48%,transparent 70%)}
+        .dw-showcase-brand img{width:245px;height:82px;object-fit:contain;object-position:left center}
+        .dw-showcase-content{position:relative;z-index:2;margin-top:58px;max-width:590px}
+        .dw-showcase-kicker{display:inline-block;font-size:11px;font-weight:900;letter-spacing:1.7px;color:#ef6420;background:#fff0e4;padding:8px 12px;border-radius:999px}
+        .dw-showcase-content h1{font-size:52px;line-height:1.02;letter-spacing:-1.7px;margin:18px 0 15px;color:#0d4d36}.dw-showcase-content h1 span{color:#f06b1f}.dw-showcase-content p{font-size:16px;line-height:1.65;color:#68716e;max-width:520px;margin:0}
+        .dw-login-benefits{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:34px;max-width:560px}.dw-login-benefits>div{background:rgba(255,255,255,.78);border:1px solid #eadfd3;border-radius:15px;padding:13px 8px;text-align:center;box-shadow:0 6px 18px rgba(55,40,25,.04)}.dw-login-benefits b{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:auto;background:#e9f6e8;font-size:20px}.dw-login-benefits>div:nth-child(2n) b{background:#fff0e4}.dw-login-benefits span{display:block;font-size:11px;font-weight:800;line-height:1.3;margin-top:8px;color:#33403b}
+        .dw-food-visual{position:absolute;right:28px;bottom:-45px;width:520px;height:310px;z-index:1}.dw-food-plate{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,#fff 0 45%,#e9e0d6 46% 51%,#c8b9aa 52% 56%,#f3eee8 57% 100%);box-shadow:0 22px 45px rgba(69,45,24,.16);transform:rotate(-8deg)}.dw-food-bowl{position:absolute;width:112px;height:112px;border-radius:50%;background:linear-gradient(145deg,#fff,#cfc8c0);border:7px solid #a69f97;display:flex;align-items:center;justify-content:center;font-size:47px;box-shadow:0 12px 20px rgba(40,30,20,.18)}.bowl-dal{left:70px;top:72px}.bowl-rice{right:72px;top:55px}.bowl-sabji{left:190px;top:112px}.bowl-roti{left:72px;bottom:20px}.bowl-salad{right:72px;bottom:18px}
+        .dw-showcase-quote{position:absolute;left:55px;bottom:38px;font-family:Georgia,serif;font-style:italic;font-size:19px;line-height:1.35;color:#176044;z-index:3;transform:rotate(-3deg)}.dw-showcase-quote span{color:#f0641d;font-size:26px}
+        .dw-login-panel{display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.6);padding:45px}
+        .dw-customer-login-card{width:min(470px,100%);background:#fff;border:1px solid #e9e0d8;border-radius:24px;padding:38px 40px;box-sizing:border-box;box-shadow:0 18px 55px rgba(46,35,25,.10);text-align:center}.dw-login-user-icon{width:60px;height:60px;border-radius:50%;background:#e8f5e9;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:27px}.dw-customer-login-tag{display:inline-block;background:#fff0e5;color:#ed6420;border-radius:999px;padding:7px 12px;font-size:10px;font-weight:900;letter-spacing:1px}.dw-customer-login-card h2{font-size:29px;letter-spacing:-.6px;margin:14px 0 6px;color:#101b31}.dw-customer-login-card>p{font-size:13px;color:#707b8a;margin:0 0 28px}
+        .dw-customer-login-card form{text-align:left;display:flex;flex-direction:column;gap:17px}.dw-customer-login-card label{font-size:13px;font-weight:900;display:flex;flex-direction:column;gap:8px;color:#1d2938}.dw-login-input-wrap{position:relative}.dw-login-input-wrap>span{position:absolute;left:14px;top:13px;font-size:17px;color:#59706a;z-index:1}.dw-login-input-wrap input{width:100%;height:52px;box-sizing:border-box;border:1px solid #d9dfe3;border-radius:11px;padding:0 43px;background:#fff;font:inherit;font-size:13px;color:#202a35;outline:none;transition:.2s}.dw-login-input-wrap input:focus{border-color:#f06b2d;box-shadow:0 0 0 4px rgba(240,107,45,.09)}.dw-password-eye{position:absolute;right:8px;top:7px;width:38px;height:38px;border:0;background:transparent;cursor:pointer;font-size:17px;border-radius:8px}.dw-password-eye:hover{background:#f7f3ee}
+        .dw-customer-login-error{background:#fff1f2;color:#c52e42;border:1px solid #f0c8ce;border-radius:9px;padding:10px 12px;font-size:11px}.dw-customer-login-submit{height:52px;border:0;border-radius:11px;background:linear-gradient(135deg,#0c6743,#0d5138);color:#fff;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 10px 22px rgba(13,81,56,.18);transition:.18s}.dw-customer-login-submit:hover{transform:translateY(-1px);box-shadow:0 13px 27px rgba(13,81,56,.24)}.dw-customer-login-submit span{font-size:18px;margin-left:8px}.dw-login-divider{display:flex;align-items:center;gap:12px;margin:23px 0 14px;color:#9aa1a7;font-size:11px;font-weight:800}.dw-login-divider:before,.dw-login-divider:after{content:"";height:1px;background:#e5e2df;flex:1}.dw-back-home{width:100%;height:48px;border:1px solid #d9eadc;background:#eef8ef;color:#12633f;border-radius:10px;font-weight:900;font-size:13px;cursor:pointer}.dw-back-home:hover{background:#e5f5e7}.dw-login-safe{display:flex;align-items:center;gap:11px;text-align:left;margin-top:25px;padding-top:20px;border-top:1px solid #eee9e5}.dw-login-safe>span{width:34px;height:34px;border-radius:50%;background:#e7f5e9;color:#168348;display:flex;align-items:center;justify-content:center;font-weight:900}.dw-login-safe strong,.dw-login-safe small{display:block}.dw-login-safe strong{font-size:11px;color:#15583c}.dw-login-safe small{font-size:10px;color:#7d858d;margin-top:3px}.dw-login-decoration{position:absolute;z-index:1;opacity:.25;font-size:75px}.leaf-one{left:-15px;top:30px;transform:rotate(-30deg)}.leaf-two{right:-10px;bottom:10px;transform:rotate(25deg)}
+        @media(max-width:1050px){.dw-login-layout{grid-template-columns:1fr;max-width:600px;min-height:auto}.dw-login-showcase{min-height:350px;padding:30px 35px}.dw-showcase-content{margin-top:28px}.dw-showcase-content h1{font-size:40px}.dw-food-visual{opacity:.5;right:-70px;bottom:-120px;transform:scale(.8)}.dw-showcase-quote{bottom:25px;left:35px}.dw-login-panel{padding:30px 20px}.dw-showcase-brand img{width:200px}}
+        @media(max-width:600px){.dw-customer-login-page{padding:10px}.dw-login-layout{border-radius:20px}.dw-login-showcase{min-height:285px;padding:23px 20px}.dw-showcase-brand img{width:175px;height:62px}.dw-showcase-content{margin-top:15px}.dw-showcase-kicker{font-size:8px;padding:6px 9px}.dw-showcase-content h1{font-size:31px;margin:11px 0 8px}.dw-showcase-content p{font-size:11px;line-height:1.45;max-width:320px}.dw-login-benefits{gap:6px;margin-top:16px}.dw-login-benefits>div{padding:8px 4px}.dw-login-benefits b{width:31px;height:31px;font-size:15px}.dw-login-benefits span{font-size:8px;margin-top:4px}.dw-food-visual{display:none}.dw-showcase-quote{font-size:12px;left:20px;bottom:12px}.dw-login-panel{padding:18px 10px}.dw-customer-login-card{padding:28px 20px;border-radius:18px}.dw-customer-login-card h2{font-size:23px}.dw-customer-login-card>p{font-size:11px;margin-bottom:22px}.dw-customer-login-card form{gap:14px}.dw-login-safe{margin-top:20px}}
+      `}</style>
     </div>
   );
 
-  // Refresh the customer record from local storage so the customer sees the latest admin update.
   let latestCustomer = customer;
   try {
     const list = JSON.parse(localStorage.getItem("dw_customers") || "[]");
@@ -384,87 +444,22 @@ function CustomerPortal() {
   return (
     <div className="dw-customer-page">
       <header className="dw-customer-header">
-        <div className="dw-customer-brand">
-          <img src={logo} alt="Dabba Wala Logo" />
-          <div><strong>Dabba Wala</strong><span>MY TIFFIN ACCOUNT</span></div>
-        </div>
+        <div className="dw-customer-brand"><img src={logo} alt="Dabba Wala Logo" /><div><strong>Dabba Wala</strong><span>MY TIFFIN ACCOUNT</span></div></div>
         <button onClick={logout}>↪ Logout</button>
       </header>
-
       <main className="dw-customer-main">
-        <div className="dw-customer-welcome">
-          <div>
-            <span>WELCOME BACK 👋</span>
-            <h1>Hello, {latestCustomer.name}</h1>
-            <p>Here is your current Dabba Wala subscription status.</p>
-          </div>
-          <div className="dw-customer-mobile">📱 {latestCustomer.mobile}</div>
-        </div>
-
+        <div className="dw-customer-welcome"><div><span>WELCOME BACK 👋</span><h1>Hello, {latestCustomer.name}</h1><p>Here is your current Dabba Wala subscription status.</p></div><div className="dw-customer-mobile">📱 {latestCustomer.mobile}</div></div>
         <div className="dw-customer-status-grid">
-          <div className="dw-c-status-card subscription">
-            <span>SUBSCRIPTION</span>
-            <strong>{subStatus}</strong>
-            <small>{latestCustomer.startDate} → {latestCustomer.endDate}</small>
-          </div>
-          <div className={`dw-c-status-card payment ${payStatus.toLowerCase().replace(" ", "-")}`}>
-            <span>PAYMENT STATUS</span>
-            <strong>{payStatus}</strong>
-            <small>Your payment status</small>
-          </div>
-          <div className="dw-c-status-card tiffin">
-            <span>TIFFINS REMAINING</span>
-            <strong>{remainingTiffins}</strong>
-            <small>Your remaining tiffins</small>
-          </div>
+          <div className="dw-c-status-card subscription"><span>SUBSCRIPTION</span><strong>{subStatus}</strong><small>{latestCustomer.startDate} → {latestCustomer.endDate}</small></div>
+          <div className={`dw-c-status-card payment ${payStatus.toLowerCase().replace(" ", "-")}`}><span>PAYMENT STATUS</span><strong>{payStatus}</strong><small>Your payment status</small></div>
+          <div className="dw-c-status-card tiffin"><span>TIFFINS REMAINING</span><strong>{remainingTiffins}</strong><small>Your remaining tiffins</small></div>
         </div>
-
-        <section className="dw-customer-card-box">
-          <div className="dw-c-box-head">
-            <div><span className="dw-c-label">MY ACCOUNT</span><h2>My Subscription</h2></div>
-            <span className={`dw-c-pill ${subStatus.toLowerCase()}`}>{subStatus}</span>
-          </div>
-          <div className="dw-c-info-grid">
-            <div><span>Plan</span><b>{latestCustomer.plan}</b></div>
-            <div><span>Valid Till</span><b>{latestCustomer.endDate}</b></div>
-            <div><span>Delivery Area</span><b>{latestCustomer.area || "—"}</b></div>
-            <div><span>Delivery Address</span><b>{latestCustomer.address}</b></div>
-          </div>
-        </section>
-
-        <section className="dw-customer-card-box">
-          <div className="dw-c-box-head">
-            <div><span className="dw-c-label">DAILY SERVICE</span><h2>My Tiffin Status</h2></div>
-            <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
-          </div>
-          <div className="dw-c-meals">
-            <div><span>☀️ Morning Tiffin</span><b className={day.morning === "Delivered" ? "delivered" : day.morning === "OFF" ? "off" : "not-updated"}>{day.morning || "Not Updated"}</b></div>
-            <div><span>🌙 Evening Tiffin</span><b className={day.evening === "Delivered" ? "delivered" : day.evening === "OFF" ? "off" : "not-updated"}>{day.evening || "Not Updated"}</b></div>
-          </div>
-          <p className="dw-c-note">Your daily delivery status is updated by Dabba Wala.</p>
-        </section>
-
-        <div className="dw-customer-help">
-          <div><strong>Need help?</strong><span>Contact Dabba Wala for any subscription or delivery query.</span></div>
-          <a href="https://wa.me/917223050454" target="_blank" rel="noreferrer">💬 WhatsApp Us</a>
-        </div>
+        <section className="dw-customer-card-box"><div className="dw-c-box-head"><div><span className="dw-c-label">MY ACCOUNT</span><h2>My Subscription</h2></div><span className={`dw-c-pill ${subStatus.toLowerCase()}`}>{subStatus}</span></div><div className="dw-c-info-grid"><div><span>Plan</span><b>{latestCustomer.plan}</b></div><div><span>Valid Till</span><b>{latestCustomer.endDate}</b></div><div><span>Delivery Area</span><b>{latestCustomer.area || "—"}</b></div><div><span>Delivery Address</span><b>{latestCustomer.address}</b></div></div></section>
+        <section className="dw-customer-card-box"><div className="dw-c-box-head"><div><span className="dw-c-label">DAILY SERVICE</span><h2>My Tiffin Status</h2></div><input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} /></div><div className="dw-c-meals"><div><span>☀️ Morning Tiffin</span><b className={day.morning === "Delivered" ? "delivered" : day.morning === "OFF" ? "off" : "not-updated"}>{day.morning || "Not Updated"}</b></div><div><span>🌙 Evening Tiffin</span><b className={day.evening === "Delivered" ? "delivered" : day.evening === "OFF" ? "off" : "not-updated"}>{day.evening || "Not Updated"}</b></div></div><p className="dw-c-note">Your daily delivery status is updated by Dabba Wala.</p></section>
+        <div className="dw-customer-help"><div><strong>Need help?</strong><span>Contact Dabba Wala for any subscription or delivery query.</span></div><a href="https://wa.me/917223050454" target="_blank" rel="noreferrer">💬 WhatsApp Us</a></div>
       </main>
-
       <style>{`
-        .dw-customer-login-page{min-height:100vh;background:radial-gradient(circle at 50% 0,#fff8ef 0,#f7f3ef 50%,#eee8e2 100%);display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;font-family:Inter,Arial,sans-serif;color:#172033}
-        .dw-customer-login-card{width:min(410px,100%);background:#fff;border:1px solid #e8dfd8;border-radius:24px;padding:34px;box-shadow:0 20px 65px rgba(45,32,22,.12);text-align:center;box-sizing:border-box}
-        .dw-customer-login-logo{width:155px;height:70px;object-fit:contain;margin:0 auto 8px}
-        .dw-customer-login-tag{display:inline-block;background:#fff1e7;color:#ed6420;border-radius:999px;padding:6px 11px;font-size:10px;font-weight:900;letter-spacing:.8px}
-        .dw-customer-login-card h1{font-size:24px;margin:13px 0 5px}.dw-customer-login-card>p{font-size:12px;color:#777;margin:0 0 23px}
-        .dw-customer-login-card form{text-align:left;display:flex;flex-direction:column;gap:12px}.dw-customer-login-card label{font-size:11px;font-weight:900;display:flex;flex-direction:column;gap:6px}.dw-customer-login-card input{width:100%;box-sizing:border-box;border:1px solid #ddd6d0;border-radius:10px;padding:12px 13px;font:inherit;font-size:13px;outline:none}.dw-customer-login-card input:focus{border-color:#f36a26;box-shadow:0 0 0 3px rgba(243,106,38,.08)}
-        .dw-customer-login-card form button{border:0;border-radius:10px;padding:13px;background:linear-gradient(135deg,#ff741b,#f15e20);color:#fff;font-weight:900;cursor:pointer;font-size:13px;margin-top:2px}.dw-customer-login-card small{display:block;color:#999;font-size:10px;margin-top:14px}.dw-back-home{border:0;background:none;color:#e76526;font-weight:800;cursor:pointer;font-size:11px;margin-top:17px}.dw-customer-login-error{background:#fff0f0;color:#c52e42;border:1px solid #f1c5cc;border-radius:9px;padding:9px;font-size:11px}
-        .dw-customer-page{min-height:100vh;background:#f8f7f5;color:#172033;font-family:Inter,Arial,sans-serif}.dw-customer-header{height:76px;background:#fff;border-bottom:1px solid #e8e2dd;padding:0 6%;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box}.dw-customer-brand{display:flex;align-items:center;gap:10px}.dw-customer-brand img{width:48px;height:48px;object-fit:contain}.dw-customer-brand strong{display:block;font-size:19px;color:#123f35}.dw-customer-brand span{display:block;font-size:8px;letter-spacing:.8px;color:#ef6425;font-weight:900;margin-top:2px}.dw-customer-header button{border:1px solid #e0d9d3;background:#fff;border-radius:9px;padding:10px 14px;font-weight:800;cursor:pointer}.dw-customer-header button:hover{border-color:#ef6a2b;color:#ef6a2b}
-        .dw-customer-main{max-width:1050px;margin:auto;padding:35px 22px 55px}.dw-customer-welcome{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:22px}.dw-customer-welcome span,.dw-c-label{font-size:10px;color:#e35d22;font-weight:900;letter-spacing:.5px}.dw-customer-welcome h1{margin:4px 0;font-size:29px;letter-spacing:-.5px}.dw-customer-welcome p{margin:0;color:#747b83;font-size:12px}.dw-customer-mobile{background:#fff;border:1px solid #e4ded9;border-radius:999px;padding:10px 14px;color:#525a62;font-size:11px;font-weight:800}
-        .dw-customer-status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:17px}.dw-c-status-card{background:#fff;border:1px solid #e6e0db;border-radius:15px;padding:17px;box-shadow:0 5px 20px rgba(30,25,20,.035)}.dw-c-status-card span{display:block;font-size:9px;font-weight:900;color:#777}.dw-c-status-card strong{display:block;font-size:24px;margin:7px 0 3px}.dw-c-status-card small{font-size:10px;color:#8a8f95}.dw-c-status-card.subscription strong{color:#188d4b}.dw-c-status-card.payment.paid strong{color:#188d4b}.dw-c-status-card.payment.pending strong{color:#c92e45}.dw-c-status-card.payment.half-payment strong{color:#9b6b00}.dw-c-status-card.tiffin strong{color:#ed7621}
-        .dw-customer-card-box{background:#fff;border:1px solid #e6e0db;border-radius:16px;padding:20px;margin-top:14px;box-shadow:0 5px 20px rgba(30,25,20,.035)}.dw-c-box-head{display:flex;align-items:center;justify-content:space-between;gap:15px;border-bottom:1px solid #eee9e5;padding-bottom:14px}.dw-c-box-head h2{margin:3px 0 0;font-size:18px}.dw-c-box-head input{border:1px solid #ddd7d2;border-radius:8px;padding:9px;font:inherit;font-size:11px}.dw-c-pill{padding:6px 10px;border-radius:999px;font-size:9px;font-weight:900}.dw-c-pill.active{background:#e6f8ed;color:#168340}.dw-c-pill.expired{background:#ffecef;color:#c72d45}
-        .dw-c-info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0}.dw-c-info-grid>div{padding:14px 10px 3px 0}.dw-c-info-grid span{display:block;color:#8a8f95;font-size:10px;margin-bottom:4px}.dw-c-info-grid b{font-size:12px;line-height:1.4}
-        .dw-c-meals{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:17px}.dw-c-meals>div{background:#faf9f7;border:1px solid #ebe5df;border-radius:12px;padding:15px;display:flex;align-items:center;justify-content:space-between;gap:12px}.dw-c-meals span{font-size:12px;font-weight:800}.dw-c-meals b{font-size:10px;border-radius:999px;padding:6px 9px}.dw-c-meals .delivered{background:#e6f8ed;color:#168340}.dw-c-meals .off{background:#fff3d6;color:#9b6b00}.dw-c-meals .not-updated{background:#eef0f2;color:#69717a}.dw-c-note{font-size:10px;color:#8b9095;margin:12px 0 0}.dw-customer-help{margin-top:17px;background:linear-gradient(100deg,#fff7eb,#fffdf9);border:1px solid #f0ddc8;border-radius:14px;padding:15px 17px;display:flex;align-items:center;justify-content:space-between;gap:15px}.dw-customer-help strong{display:block;font-size:12px}.dw-customer-help span{display:block;color:#777;font-size:10px;margin-top:3px}.dw-customer-help a{background:#19b957;color:#fff;text-decoration:none;border-radius:9px;padding:9px 12px;font-size:10px;font-weight:900;white-space:nowrap}
-        @media(max-width:650px){.dw-customer-header{padding:0 15px}.dw-customer-main{padding:25px 14px 40px}.dw-customer-welcome{align-items:flex-start;flex-direction:column}.dw-customer-welcome h1{font-size:24px}.dw-customer-mobile{font-size:10px}.dw-customer-status-grid{grid-template-columns:1fr}.dw-c-info-grid{grid-template-columns:1fr}.dw-c-meals{grid-template-columns:1fr}.dw-customer-help{align-items:flex-start;flex-direction:column}.dw-customer-help a{width:100%;text-align:center;box-sizing:border-box}.dw-c-box-head{align-items:flex-start}.dw-c-box-head input{max-width:135px}.dw-customer-login-card{padding:28px 20px}}
+        .dw-customer-page{min-height:100vh;background:#f8f7f5;color:#172033;font-family:Inter,Arial,sans-serif}.dw-customer-header{height:76px;background:#fff;border-bottom:1px solid #e8e2dd;padding:0 6%;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box}.dw-customer-brand{display:flex;align-items:center;gap:10px}.dw-customer-brand img{width:48px;height:48px;object-fit:contain}.dw-customer-brand strong{display:block;font-size:19px;color:#123f35}.dw-customer-brand span{display:block;font-size:8px;letter-spacing:.8px;color:#ef6425;font-weight:900;margin-top:2px}.dw-customer-header button{border:1px solid #e0d9d3;background:#fff;border-radius:9px;padding:10px 14px;font-weight:800;cursor:pointer}.dw-customer-header button:hover{border-color:#ef6a2b;color:#ef6a2b}.dw-customer-main{max-width:1050px;margin:auto;padding:35px 22px 55px}.dw-customer-welcome{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:22px}.dw-customer-welcome span,.dw-c-label{font-size:10px;color:#e35d22;font-weight:900;letter-spacing:.5px}.dw-customer-welcome h1{margin:4px 0;font-size:29px;letter-spacing:-.5px}.dw-customer-welcome p{margin:0;color:#747b83;font-size:12px}.dw-customer-mobile{background:#fff;border:1px solid #e4ded9;border-radius:999px;padding:10px 14px;color:#525a62;font-size:11px;font-weight:800}.dw-customer-status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:17px}.dw-c-status-card{background:#fff;border:1px solid #e6e0db;border-radius:15px;padding:17px;box-shadow:0 5px 20px rgba(30,25,20,.035)}.dw-c-status-card span{display:block;font-size:9px;font-weight:900;color:#777}.dw-c-status-card strong{display:block;font-size:24px;margin:7px 0 3px}.dw-c-status-card small{font-size:10px;color:#8a8f95}.dw-c-status-card.subscription strong{color:#188d4b}.dw-c-status-card.payment.paid strong{color:#188d4b}.dw-c-status-card.payment.pending strong{color:#c92e45}.dw-c-status-card.payment.half-payment strong{color:#9b6b00}.dw-c-status-card.tiffin strong{color:#ed7621}.dw-customer-card-box{background:#fff;border:1px solid #e6e0db;border-radius:16px;padding:20px;margin-top:14px;box-shadow:0 5px 20px rgba(30,25,20,.035)}.dw-c-box-head{display:flex;align-items:center;justify-content:space-between;gap:15px;border-bottom:1px solid #eee9e5;padding-bottom:14px}.dw-c-box-head h2{margin:3px 0 0;font-size:18px}.dw-c-box-head input{border:1px solid #ddd7d2;border-radius:8px;padding:9px;font:inherit;font-size:11px}.dw-c-pill{padding:6px 10px;border-radius:999px;font-size:9px;font-weight:900}.dw-c-pill.active{background:#e6f8ed;color:#168340}.dw-c-pill.expired{background:#ffecef;color:#c72d45}.dw-c-info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0}.dw-c-info-grid>div{padding:14px 10px 3px 0}.dw-c-info-grid span{display:block;color:#8a8f95;font-size:10px;margin-bottom:4px}.dw-c-info-grid b{font-size:12px;line-height:1.4}.dw-c-meals{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:17px}.dw-c-meals>div{background:#faf9f7;border:1px solid #ebe5df;border-radius:12px;padding:15px;display:flex;align-items:center;justify-content:space-between;gap:12px}.dw-c-meals span{font-size:12px;font-weight:800}.dw-c-meals b{font-size:10px;border-radius:999px;padding:6px 9px}.dw-c-meals .delivered{background:#e6f8ed;color:#168340}.dw-c-meals .off{background:#fff3d6;color:#9b6b00}.dw-c-meals .not-updated{background:#eef0f2;color:#69717a}.dw-c-note{font-size:10px;color:#8b9095;margin:12px 0 0}.dw-customer-help{margin-top:17px;background:linear-gradient(100deg,#fff7eb,#fffdf9);border:1px solid #f0ddc8;border-radius:14px;padding:15px 17px;display:flex;align-items:center;justify-content:space-between;gap:15px}.dw-customer-help strong{display:block;font-size:12px}.dw-customer-help span{display:block;color:#777;font-size:10px;margin-top:3px}.dw-customer-help a{background:#19b957;color:#fff;text-decoration:none;border-radius:9px;padding:9px 12px;font-size:10px;font-weight:900;white-space:nowrap}@media(max-width:650px){.dw-customer-header{padding:0 15px}.dw-customer-main{padding:25px 14px 40px}.dw-customer-welcome{align-items:flex-start;flex-direction:column}.dw-customer-welcome h1{font-size:24px}.dw-customer-mobile{font-size:10px}.dw-customer-status-grid{grid-template-columns:1fr}.dw-c-info-grid{grid-template-columns:1fr}.dw-c-meals{grid-template-columns:1fr}.dw-customer-help{align-items:flex-start;flex-direction:column}.dw-customer-help a{width:100%;text-align:center;box-sizing:border-box}.dw-c-box-head{align-items:flex-start}.dw-c-box-head input{max-width:135px}}
       `}</style>
     </div>
   );
