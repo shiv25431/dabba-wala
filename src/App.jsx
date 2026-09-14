@@ -21,6 +21,8 @@ function AdminPanel() {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [selectedDate, setSelectedDate] = useState(today);
   const [editPayment, setEditPayment] = useState(null);
+  const [editCustomer, setEditCustomer] = useState(null);
+  const [editForm, setEditForm] = useState(null);
 
   const saveCustomers = (next) => {
     setCustomers(next);
@@ -104,6 +106,52 @@ function AdminPanel() {
     }
   };
 
+  const openEditCustomer = (c) => {
+    setEditCustomer(c);
+    setEditForm({
+      name:c.name || "", mobile:c.mobile || "", address:c.address || "", area:c.area || "",
+      plan:c.plan || "Monthly Subscription", ratePerTiffin:String(c.ratePerTiffin || 50),
+      totalTiffins:String(c.totalTiffins || 0), totalAmount:String(c.totalAmount || 0),
+      paidAmount:String(c.paidAmount || 0), startDate:c.startDate || today, notes:c.notes || ""
+    });
+  };
+
+  const recalcEditAmount = (field, value) => {
+    const next = { ...editForm, [field]: value };
+    if (field === "ratePerTiffin" || field === "totalTiffins") {
+      const rate = Number(field === "ratePerTiffin" ? value : editForm.ratePerTiffin) || 0;
+      const qty = Number(field === "totalTiffins" ? value : editForm.totalTiffins) || 0;
+      next.totalAmount = String(rate * qty);
+    }
+    setEditForm(next);
+  };
+
+  const saveEditedCustomer = (e) => {
+    e.preventDefault();
+    if (!editCustomer || !editForm) return;
+    const mobile = editForm.mobile.replace(/\D/g, "");
+    const rate = Number(editForm.ratePerTiffin), qty = Number(editForm.totalTiffins);
+    const total = Number(editForm.totalAmount), paid = Math.min(Math.max(Number(editForm.paidAmount || 0),0), total);
+    if (!editForm.name.trim() || mobile.length !== 10 || !editForm.address.trim() || !rate || !qty || !total || !editForm.startDate) {
+      alert("Name, 10-digit mobile, address, rate, total tiffins and start date are required."); return;
+    }
+    const start = new Date(editForm.startDate + "T00:00:00");
+    const end = new Date(start);
+    if (editForm.plan === "Monthly Subscription") end.setDate(end.getDate() + 30);
+
+    const next = customers.map(x => x.id === editCustomer.id ? {
+      ...x, name:editForm.name.trim(), mobile, address:editForm.address.trim(), area:editForm.area.trim(),
+      plan:editForm.plan, ratePerTiffin:rate, totalTiffins:qty, totalAmount:total, paidAmount:paid,
+      paymentStatus:paymentStatus({...x,totalAmount:total,paidAmount:paid}), startDate:editForm.startDate,
+      endDate:end.toISOString().slice(0,10), notes:editForm.notes.trim()
+    } : x);
+    saveCustomers(next);
+    setSelectedCustomer(next.find(x => x.id === editCustomer.id) || null);
+    if (selectedDate < editForm.startDate) setSelectedDate(editForm.startDate);
+    setEditCustomer(null);
+    setEditForm(null);
+  };
+
   const updatePayment = (c, value) => {
     const paidAmount = Math.min(Math.max(Number(value) || 0, 0), Number(c.totalAmount || 0));
     const next = customers.map(x => x.id === c.id
@@ -114,6 +162,7 @@ function AdminPanel() {
   };
 
   const setMeal = (c, date, meal, status) => {
+    if (date < c.startDate) { alert(`Daily entry cannot be added before the customer start date (${c.startDate}).`); return; }
     const day = c.dailyRecords?.[date] || {morning:"Not Updated",evening:"Not Updated"};
     const next = customers.map(x => x.id === c.id ? {
       ...x, dailyRecords:{...(x.dailyRecords||{}),[date]:{...day,[meal]:status}}
@@ -123,6 +172,7 @@ function AdminPanel() {
   };
 
   const fullDayOff = (c,date) => {
+    if (date < c.startDate) { alert(`Daily entry cannot be added before the customer start date (${c.startDate}).`); return; }
     const next = customers.map(x => x.id === c.id ? {
       ...x,dailyRecords:{...(x.dailyRecords||{}),[date]:{morning:"OFF",evening:"OFF"}}
     } : x);
@@ -233,11 +283,11 @@ function AdminPanel() {
               <div className="dw-customer-cards">{filtered.map(c=>{
                 const pay=paymentStatus(c), rem=remaining(c), total=Number(c.totalTiffins||0), percent=total?Math.round((rem/total)*100):0;
                 return <div className="dw-customer-card" key={c.id}>
-                  <div className="dw-customer-top"><div className="dw-avatar">{(c.name||"C").slice(0,2).toUpperCase()}</div><div className="dw-customer-info"><h3>{c.name}</h3><div className="dw-contact-line">☎ {c.mobile} <span>◉</span></div><div className="dw-location-line">⌖ {c.area||"Area not set"} <span>⌂ {c.address}</span></div></div><span className={`dw-status ${pay.toLowerCase().replace(" ","-")}`}>{pay}</span><button className="dw-more">•••</button></div>
+                  <div className="dw-customer-top"><div className="dw-avatar">{(c.name||"C").slice(0,2).toUpperCase()}</div><div className="dw-customer-info"><h3>{c.name}</h3><div className="dw-contact-line">☎ {c.mobile} <span>◉</span></div><div className="dw-location-line">⌖ {c.area||"Area not set"} <span>⌂ {c.address}</span></div></div><span className={`dw-status ${pay.toLowerCase().replace(" ","-")}`}>{pay}</span><button className="dw-more" title="Edit customer" onClick={()=>openEditCustomer(c)}>•••</button></div>
                   <div className="dw-customer-metrics">
                     <div><b>{c.totalTiffins}</b><span>Total Tiffins</span></div><div><b>{used(c)}</b><span>Used</span></div><div className="remaining-metric"><b>{rem}</b><span>Remaining</span><div className="dw-progress"><i style={{width:`${percent}%`}}></i></div><small>{percent}%</small></div><div><b>₹{c.ratePerTiffin}</b><span>Per Tiffin</span></div><div><b>₹{Number(c.totalAmount||0).toLocaleString("en-IN")}</b><span>Total Amount</span></div><div className="paid-metric"><b>₹{Number(c.paidAmount||0).toLocaleString("en-IN")}</b><span>Paid</span></div><div className="pending-metric"><b>₹{pending(c).toLocaleString("en-IN")}</b><span>Pending</span></div>
                   </div>
-                  <div className="dw-actions"><button className="daily" onClick={()=>{setSelectedCustomer(c);setTimeout(()=>document.getElementById("dw-daily")?.scrollIntoView({behavior:"smooth"}),50)}}>▣ Daily Update</button><button className="payment" onClick={()=>setEditPayment(c)}>₹ Payment</button><button className="dw-wa" onClick={()=>sendMessage(c)}>◉ WhatsApp</button><button className="dw-delete" onClick={()=>removeCustomer(c.id)}>♜ Delete</button></div>
+                  <div className="dw-actions"><button className="daily" onClick={()=>{setSelectedCustomer(c);setSelectedDate(selectedDate < c.startDate ? c.startDate : selectedDate);setTimeout(()=>document.getElementById("dw-daily")?.scrollIntoView({behavior:"smooth"}),50)}}>▣ Daily Update</button><button className="payment" onClick={()=>setEditPayment(c)}>₹ Payment</button><button className="dw-edit" onClick={()=>openEditCustomer(c)}>✎ Edit</button><button className="dw-wa" onClick={()=>sendMessage(c)}>◉ WhatsApp</button><button className="dw-delete" onClick={()=>removeCustomer(c.id)}>♜ Delete</button></div>
                 </div>;
               })}</div>}
           </div>
@@ -245,10 +295,24 @@ function AdminPanel() {
 
         {selectedCustomer && <section className="dw-admin-card dw-daily-card" id="dw-daily">
           <div className="dw-daily-head"><div><div className="dw-section-title"><div className="dw-section-icon blue">▣</div><div><h2>Daily Tiffin Update</h2><p>{selectedCustomer.name} • {used(selectedCustomer)} used • <strong>{remaining(selectedCustomer)} remaining</strong></p></div></div></div><button className="dw-close-btn" onClick={()=>setSelectedCustomer(null)}>×</button></div>
-          <div className="dw-date-control"><label>Select Date<input type="date" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)}/></label><button className="dw-off-btn" onClick={()=>fullDayOff(selectedCustomer,selectedDate)}>🟡 Mark Full Day OFF</button></div>
+          <div className="dw-date-control"><label>Select Date<input type="date" min={selectedCustomer.startDate} value={selectedDate < selectedCustomer.startDate ? selectedCustomer.startDate : selectedDate} onChange={e=>setSelectedDate(e.target.value)}/></label><button className="dw-off-btn" onClick={()=>fullDayOff(selectedCustomer,selectedDate)}>🟡 Mark Full Day OFF</button></div>
           <div className="dw-meal-grid">{["morning","evening"].map(meal=>{const status=selectedCustomer.dailyRecords?.[selectedDate]?.[meal]||"Not Updated";return <div className="dw-meal-card" key={meal}><div className="meal-icon">{meal==="morning"?"☀️":"🌙"}</div><div><h3>{meal==="morning"?"Morning Tiffin":"Evening Tiffin"}</h3><strong className={`meal-${status.toLowerCase().replace(" ","-")}`}>{status}</strong></div><div className="meal-actions"><button onClick={()=>setMeal(selectedCustomer,selectedDate,meal,"Delivered")}>✓ Delivered</button><button onClick={()=>setMeal(selectedCustomer,selectedDate,meal,"OFF")}>OFF</button></div></div>})}</div>
           <div className="dw-daily-note"><b>How it works:</b> Delivered = 1 tiffin used. OFF / Not Updated = balance does not decrease. Sunday can be used for one meal only according to the service schedule.</div>
         </section>}
+
+        {editCustomer && editForm && <div className="dw-modal-overlay" onClick={()=>{setEditCustomer(null);setEditForm(null)}}><div className="dw-payment-modal dw-edit-customer-modal" onClick={e=>e.stopPropagation()}>
+          <button className="dw-modal-close" onClick={()=>{setEditCustomer(null);setEditForm(null)}}>×</button><div className="dw-payment-icon">✎</div><h2>Edit Customer</h2><p>Update details for {editCustomer.name}</p>
+          <form onSubmit={saveEditedCustomer} className="dw-edit-form">
+            <div className="dw-two"><label>Customer Name *<input required value={editForm.name} onChange={e=>setEditForm({...editForm,name:e.target.value})}/></label><label>WhatsApp Mobile *<input required inputMode="numeric" maxLength="10" value={editForm.mobile} onChange={e=>setEditForm({...editForm,mobile:e.target.value.replace(/\D/g,"")})}/></label></div>
+            <label>Delivery Address *<textarea required rows="2" value={editForm.address} onChange={e=>setEditForm({...editForm,address:e.target.value})}/></label>
+            <div className="dw-two"><label>Area<input value={editForm.area} onChange={e=>setEditForm({...editForm,area:e.target.value})}/></label><label>Plan<select value={editForm.plan} onChange={e=>setEditForm({...editForm,plan:e.target.value})}><option>Monthly Subscription</option><option>Custom Subscription</option><option>First Meal Trial</option></select></label></div>
+            <div className="dw-two"><label>Rate / Tiffin (₹) *<input type="number" min="1" value={editForm.ratePerTiffin} onChange={e=>recalcEditAmount("ratePerTiffin",e.target.value)}/></label><label>Total Tiffins *<input type="number" min="1" value={editForm.totalTiffins} onChange={e=>recalcEditAmount("totalTiffins",e.target.value)}/></label></div>
+            <div className="dw-two"><label>Total Amount (₹)<input type="number" min="0" value={editForm.totalAmount} onChange={e=>setEditForm({...editForm,totalAmount:e.target.value})}/></label><label>Paid Amount (₹)<input type="number" min="0" value={editForm.paidAmount} onChange={e=>setEditForm({...editForm,paidAmount:e.target.value})}/></label></div>
+            <div className="dw-two"><label>Start Date *<input type="date" value={editForm.startDate} onChange={e=>setEditForm({...editForm,startDate:e.target.value})}/></label><label>Notes<input value={editForm.notes} onChange={e=>setEditForm({...editForm,notes:e.target.value})}/></label></div>
+            <div className="dw-live-summary"><b>Updated Subscription Summary</b><strong>{editForm.totalTiffins} tiffins × ₹{editForm.ratePerTiffin} = ₹{editForm.totalAmount}</strong><span>Paid ₹{editForm.paidAmount} • Pending ₹{Math.max(0,Number(editForm.totalAmount||0)-Number(editForm.paidAmount||0))}</span></div>
+            <button className="dw-primary" type="submit">✓ Save Changes</button>
+          </form>
+        </div></div>}
 
         {editPayment && <div className="dw-modal-overlay" onClick={()=>setEditPayment(null)}><div className="dw-payment-modal" onClick={e=>e.stopPropagation()}>
           <button className="dw-modal-close" onClick={()=>setEditPayment(null)}>×</button><div className="dw-payment-icon">₹</div><h2>Update Payment</h2><p>{editPayment.name}</p>
@@ -1138,7 +1202,9 @@ function App() {
           }
           .order-form-modal .plan-header h2 { font-size: 24px; }
         }
-      `}</style>
+      .dw-actions .dw-edit{color:#7048b8;border-color:#d7c7f1;background:#faf7ff}.dw-edit-customer-modal{width:min(680px,100%);max-height:90vh;overflow:auto}.dw-edit-form{display:flex;flex-direction:column;gap:10px}.dw-edit-form label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:800;color:#26303b}.dw-edit-form input,.dw-edit-form textarea,.dw-edit-form select{width:100%;box-sizing:border-box;border:1px solid #ddd8d4;border-radius:9px;padding:10px 11px;background:#fff;font:inherit;font-size:12px;color:#252a31;outline:none}.dw-edit-form input:focus,.dw-edit-form textarea:focus,.dw-edit-form select:focus{border-color:#f36a26;box-shadow:0 0 0 3px rgba(243,106,38,.08)}.dw-more{border:1px solid #e1dbd6;background:#fff;border-radius:8px;padding:6px 8px;cursor:pointer;color:#777}.dw-more:hover{border-color:#ef6a2b;color:#ef6a2b}
+      `}
+</style>
 
       {/* Footer */}
       <footer className="footer">
