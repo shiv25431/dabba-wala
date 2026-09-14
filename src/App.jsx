@@ -8,6 +8,7 @@ function AdminPanel() {
   const today = new Date().toISOString().slice(0, 10);
   const [loggedIn, setLoggedIn] = useState(() => localStorage.getItem("dw_admin_auth") === "1");
   const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
   const [whatsappEnabled, setWhatsappEnabled] = useState(() => localStorage.getItem("dw_whatsapp_enabled") === "1");
   const [customers, setCustomers] = useState(() => {
     try { return JSON.parse(localStorage.getItem("dw_customers") || "[]"); } catch { return []; }
@@ -55,8 +56,9 @@ function AdminPanel() {
     e.preventDefault();
     if (password === "7223") {
       localStorage.setItem("dw_admin_auth", "1");
+      setLoginError("");
       setLoggedIn(true); setPassword("");
-    } else alert("Wrong admin PIN");
+    } else setLoginError("Incorrect admin PIN. Please try again.");
   };
 
   const recalcAmount = (field, value) => {
