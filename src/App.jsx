@@ -251,11 +251,46 @@ function AdminPanel() {
   const totalPending = Math.max(0,totalAmount-totalPaid);
   const totalRemaining = customers.reduce((s,c)=>s+remaining(c),0);
 
-  if (!loggedIn) return <div className="dw-admin-login"><div className="dw-admin-card">
-    <img className="dw-logo-img" src={logo} alt="Dabba Wala Logo"/><h1>Dabba Wala</h1><p>Owner Admin Panel</p>
-    <form onSubmit={login}><input type="password" placeholder="Admin PIN" value={password} onChange={e=>setPassword(e.target.value)} autoFocus/><button>Login to Admin</button></form>
-    <small>Owner access only</small>
-  </div></div>;
+  if (!loggedIn) return <div className="dw-login-page">
+    <style>{`
+      .dw-login-page{min-height:100vh;background:#fbf8f1;display:grid;grid-template-columns:1fr 1fr;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#163f2d;overflow:hidden}
+      .dw-login-left{display:flex;flex-direction:column;justify-content:center;padding:56px clamp(28px,6vw,90px);position:relative;background:linear-gradient(145deg,#fffdf8 0%,#f8f5ec 100%)}
+      .dw-login-left:before{content:"";position:absolute;width:420px;height:420px;border-radius:50%;background:rgba(229,239,218,.48);left:-210px;bottom:-180px}
+      .dw-login-brand{display:flex;align-items:center;gap:14px;margin-bottom:44px;position:relative;z-index:1}
+      .dw-login-brand img{width:68px;height:68px;object-fit:contain;border-radius:14px}
+      .dw-login-brand strong{font-size:30px;line-height:1;font-weight:850;letter-spacing:-1.5px}.dw-login-brand strong span{color:#f26a22}.dw-login-brand small{display:block;margin-top:7px;color:#64716c;font-size:13px;font-weight:600;letter-spacing:.2px}
+      .dw-login-copy{max-width:540px;position:relative;z-index:1}.dw-login-copy .eyebrow{display:inline-flex;align-items:center;gap:7px;background:#eaf4e5;color:#1c6a45;border-radius:999px;padding:8px 13px;font-size:12px;font-weight:800;margin-bottom:18px}.dw-login-copy h1{font-size:clamp(38px,4.3vw,60px);line-height:1.03;letter-spacing:-2.5px;margin:0 0 18px;color:#174b34}.dw-login-copy h1 span{color:#f26a22}.dw-login-copy p{font-size:17px;line-height:1.65;color:#65716d;max-width:490px;margin:0}.dw-login-features{display:flex;gap:24px;flex-wrap:wrap;margin-top:34px;position:relative;z-index:1}.dw-login-feature{display:flex;align-items:center;gap:9px;color:#41534b;font-size:13px;font-weight:750}.dw-login-feature b{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#e6f1df;color:#237049}
+      .dw-login-right{background:linear-gradient(145deg,#075b39 0%,#0c442f 100%);position:relative;display:flex;align-items:center;justify-content:center;padding:40px;overflow:hidden}.dw-login-right:before,.dw-login-right:after{content:"";position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.13)}.dw-login-right:before{width:520px;height:520px;right:-260px;top:-210px}.dw-login-right:after{width:420px;height:420px;left:-260px;bottom:-230px}
+      .dw-login-panel{width:min(440px,100%);background:rgba(255,255,255,.98);border-radius:28px;padding:38px;box-shadow:0 28px 70px rgba(0,0,0,.24);position:relative;z-index:2}.dw-login-panel .panel-icon{width:58px;height:58px;border-radius:17px;background:#eaf5e8;display:grid;place-items:center;font-size:27px;margin-bottom:20px}.dw-login-panel h2{margin:0;color:#174b34;font-size:30px;letter-spacing:-.8px}.dw-login-panel .sub{margin:8px 0 28px;color:#77827d;font-size:13px;line-height:1.5}.dw-login-field{display:block;margin-bottom:17px}.dw-login-field span{display:block;font-size:12px;font-weight:800;color:#35443e;margin-bottom:7px}.dw-login-field input{width:100%;box-sizing:border-box;border:1px solid #d9e0db;border-radius:13px;padding:14px 15px;font-size:15px;outline:none;background:#fbfcfb;color:#20382d}.dw-login-field input:focus{border-color:#248052;box-shadow:0 0 0 4px rgba(36,128,82,.1)}.dw-login-submit{width:100%;border:0;border-radius:13px;padding:14px 18px;background:#087342;color:#fff;font-size:15px;font-weight:850;cursor:pointer;box-shadow:0 9px 20px rgba(8,115,66,.22);transition:.2s}.dw-login-submit:hover{background:#075e36;transform:translateY(-1px)}.dw-login-error{background:#fff0ed;color:#b53b2c;border:1px solid #ffd2ca;padding:10px 12px;border-radius:10px;font-size:12px;font-weight:700;margin:-5px 0 15px}.dw-login-secure{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:20px;padding-top:17px;border-top:1px solid #edf0ed;color:#738078;font-size:11px;font-weight:700}.dw-login-right-brand{position:absolute;top:34px;right:42px;color:#fff;font-size:13px;font-weight:800;opacity:.9;z-index:1}.dw-login-tiffin{position:absolute;right:8%;bottom:4%;font-size:150px;filter:drop-shadow(0 18px 18px rgba(0,0,0,.2));transform:rotate(-7deg);opacity:.94;z-index:1}.dw-login-slogan{position:absolute;left:9%;bottom:9%;color:rgba(255,255,255,.88);font-size:18px;font-weight:800;line-height:1.35;z-index:1}.dw-login-slogan span{color:#ff8a42}
+      @media(max-width:850px){.dw-login-page{grid-template-columns:1fr}.dw-login-right{min-height:560px;padding:24px}.dw-login-left{padding:38px 24px}.dw-login-copy h1{font-size:43px}.dw-login-brand{margin-bottom:34px}.dw-login-tiffin{font-size:100px;right:5%;bottom:3%}.dw-login-slogan{left:6%;bottom:7%;font-size:14px}.dw-login-right-brand{top:20px;right:22px}.dw-login-panel{padding:28px 22px;border-radius:22px}}
+      @media(max-width:480px){.dw-login-left{padding:28px 20px}.dw-login-brand img{width:56px;height:56px}.dw-login-brand strong{font-size:25px}.dw-login-copy h1{font-size:36px}.dw-login-copy p{font-size:15px}.dw-login-features{gap:12px}.dw-login-feature{font-size:11px}.dw-login-right{min-height:520px}.dw-login-panel h2{font-size:26px}}
+    `}</style>
+    <section className="dw-login-left">
+      <div className="dw-login-brand"><img src={logo} alt="Dabba Wala Logo"/><div><strong>Dabba<span>Wala</span></strong><small>Homely Food, Happier You</small></div></div>
+      <div className="dw-login-copy">
+        <div className="eyebrow">🔐 OWNER ACCESS</div>
+        <h1>Manage your <span>Dabba Wala</span> business with ease.</h1>
+        <p>Customers, daily deliveries, meal planning and payments — everything you need in one simple admin dashboard.</p>
+      </div>
+      <div className="dw-login-features"><div className="dw-login-feature"><b>✓</b>Customer Management</div><div className="dw-login-feature"><b>✓</b>Daily Delivery</div><div className="dw-login-feature"><b>✓</b>Payment Tracking</div></div>
+    </section>
+    <section className="dw-login-right">
+      <div className="dw-login-right-brand">🛡️ Secure Admin Panel</div>
+      <div className="dw-login-slogan">Good Food<br/><span>Builds Better Days</span></div>
+      <div className="dw-login-tiffin">🍱</div>
+      <div className="dw-login-panel">
+        <div className="panel-icon">👤</div>
+        <h2>Welcome back</h2>
+        <p className="sub">Sign in to continue to your Dabba Wala owner dashboard.</p>
+        {loginError && <div className="dw-login-error">{loginError}</div>}
+        <form onSubmit={login}>
+          <label className="dw-login-field"><span>ADMIN PIN</span><input type="password" placeholder="Enter your admin PIN" value={password} onChange={e=>setPassword(e.target.value)} autoFocus/></label>
+          <button className="dw-login-submit" type="submit">Login to Admin&nbsp; →</button>
+        </form>
+        <div className="dw-login-secure">🔒 Owner access only &nbsp;•&nbsp; Protected dashboard</div>
+      </div>
+    </section>
+  </div>;
 
   return <div className="dw-admin-page">
     <aside className="dw-sidebar">
